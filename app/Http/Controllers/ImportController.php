@@ -28,7 +28,6 @@ class ImportController extends Controller
     {
         $file = $request->file('csv_file');
         
-        // Vercel serverless /tmp writable storage compatibility
         $tmpDir = is_dir('/tmp') ? '/tmp' : storage_path('app');
         $originalName = $file->getClientOriginalName();
         $fileName = 'import_' . time() . '_' . Str::random(6) . '.csv';
@@ -51,33 +50,45 @@ class ImportController extends Controller
 
         $analysis = $this->importService->checkDuplicates($rows);
 
-        $request->session()->put('import_original_name', $originalName);
-        $request->session()->put('import_file_path', $fullPath);
-        $request->session()->put('import_rows', $rows);
-        $request->session()->put('import_analysis', $analysis);
+        // Store rows & analysis in lightweight /tmp JSON file to keep session tiny & prevent cookie overflow logout
+        $jsonPath = $tmpDir . '/import_payload_' . time() . '_' . Str::random(8) . '.json';
+        file_put_contents($jsonPath, json_encode([
+            'original_name' => $originalName,
+            'file_path' => $fullPath,
+            'rows' => $rows,
+            'analysis' => $analysis,
+        ]));
+
+        $request->session()->put('import_json_payload', $jsonPath);
 
         return redirect()->route('import.preview');
     }
 
     public function preview(Request $request)
     {
-        $rows = $request->session()->get('import_rows');
-        $analysis = $request->session()->get('import_analysis');
-        
-        if (!$rows || !$analysis) {
+        $jsonPath = $request->session()->get('import_json_payload');
+        if (!$jsonPath || !file_exists($jsonPath)) {
             return redirect()->route('import.index')->with('error', 'Önizleme verisi bulunamadı.');
+        }
+
+        $payload = json_decode(file_get_contents($jsonPath), true);
+        $rows = $payload['rows'] ?? [];
+        $analysis = $payload['analysis'] ?? [];
+
+        if (empty($rows)) {
+            return redirect()->route('import.index')->with('error', 'Önizleme verisi okunamadı.');
         }
 
         $previewRows = array_slice($rows, 0, 20);
         
         return view('imports.preview', [
             'totalCount' => count($rows),
-            'newCount' => count($analysis['new']),
-            'duplicateCount' => count($analysis['duplicates']),
-            'errorCount' => count($analysis['errors']),
-            'errors' => array_slice($analysis['errors'], 0, 10),
+            'newCount' => count($analysis['new'] ?? []),
+            'duplicateCount' => count($analysis['duplicates'] ?? []),
+            'errorCount' => count($analysis['errors'] ?? []),
+            'errors' => array_slice($analysis['errors'] ?? [], 0, 10),
             'previewRows' => $previewRows,
-            'duplicates' => array_slice($analysis['duplicates'], 0, 10),
+            'duplicates' => array_slice($analysis['duplicates'] ?? [], 0, 10),
         ]);
     }
 
@@ -87,20 +98,30 @@ class ImportController extends Controller
             'duplicate_action' => 'required|in:skip,update,create_new'
         ]);
 
-        $rows = $request->session()->get('import_rows');
-        if (!$rows) {
+        $jsonPath = $request->session()->get('import_json_payload');
+        if (!$jsonPath || !file_exists($jsonPath)) {
             return redirect()->route('import.index')->with('error', 'İçe aktarma verisi bulunamadı.');
         }
 
-        $originalName = $request->session()->get('import_original_name', 'import_' . date('Y-m-d_H-i-s') . '.csv');
+        $payload = json_decode(file_get_contents($jsonPath), true);
+        $rows = $payload['rows'] ?? [];
+        $originalName = $payload['original_name'] ?? ('import_' . date('Y-m-d_H-i-s') . '.csv');
+
+        if (empty($rows)) {
+            return redirect()->route('import.index')->with('error', 'İçe aktarma verisi bulunamadı.');
+        }
+
         $import = $this->importService->processImport($rows, $request->duplicate_action, Auth::id(), $originalName);
 
-        $request->session()->forget(['import_rows', 'import_analysis', 'import_original_name']);
-        
-        $path = $request->session()->get('import_file_path');
-        if ($path && file_exists($path)) {
-            @unlink($path);
-            $request->session()->forget('import_file_path');
+        $request->session()->forget('import_json_payload');
+
+        // Cleanup temporary files
+        if (file_exists($jsonPath)) {
+            @unlink($jsonPath);
+        }
+        $filePath = $payload['file_path'] ?? null;
+        if ($filePath && file_exists($filePath)) {
+            @unlink($filePath);
         }
 
         return view('imports.result', [

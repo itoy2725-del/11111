@@ -45,8 +45,8 @@ $_ENV['VIEW_COMPILED_PATH'] = "{$tmpStorage}/framework/views";
 putenv("LOG_CHANNEL=stderr");
 $_ENV['LOG_CHANNEL'] = "stderr";
 
-putenv("SESSION_DRIVER=cookie");
-$_ENV['SESSION_DRIVER'] = "cookie";
+putenv("SESSION_DRIVER=file");
+$_ENV['SESSION_DRIVER'] = "file";
 
 putenv("CACHE_STORE=array");
 $_ENV['CACHE_STORE'] = "array";
