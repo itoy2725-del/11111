@@ -104,28 +104,29 @@
                 <tbody class="divide-y divide-gray-100">
                     @forelse($previewRows as $row)
                         @php
-                            $adSoyad = $row['ad_soyad'] ?? $row['full_name'] ?? $row['name'] ?? 'Meta Lead';
+                            $adSoyad = $row['ad_soyad'] ?? 'Meta Lead';
                             $phone = $row['normalized_phone'] ?? '-';
                             $email = $row['normalized_email'] ?? '-';
-                            $adName = trim(str_replace('"', '', $row['ad_name'] ?? ''));
-                            $campaignName = trim(str_replace('"', '', $row['campaign_name'] ?? ''));
-                            $platform = strtoupper($row['platform'] ?? 'FB');
+                            $adName = $row['clean_ad_name'] ?? 'New Leads Ad';
+                            $campaignName = $row['clean_campaign_name'] ?? 'New Leads Campaign';
+                            $platform = strtoupper($row['col_11'] ?? $row['platform'] ?? 'FB');
+                            $createdTimeVal = $row['col_1'] ?? $row['created_time'] ?? null;
                             $createdTime = '-';
-                            if (!empty($row['created_time'])) {
+                            if (!empty($createdTimeVal)) {
                                 try {
-                                    $createdTime = \Carbon\Carbon::parse($row['created_time'])->format('d.m.Y H:i');
+                                    $createdTime = \Carbon\Carbon::parse($createdTimeVal)->format('d.m.Y H:i');
                                 } catch (\Throwable $e) {
                                     $createdTime = '-';
                                 }
                             }
                             
-                            // Form Answers
-                            $fraud = $row['durumunuz_en_iyisi_hangisi_tanımlıyor'] ?? $row['durumunuzu_en_iyi_hangisi_tanımlıyor'] ?? '-';
-                            $loss = $row['ne_kadar_kripto_kaybedildi'] ?? '-';
-                            $wallet = $row['fonlarınızı_göndermek_için_kullandığınız_cüzdanı_seçin'] ?? '-';
-                            $complaint = $row['polise_siber_suç_yetkililerine_veya_mali_düzenleyicilere_bir_ihbar_şikayet_yaptınız_mı'] ?? '-';
-                            $security = $row['gelecekteki_kayıpları_önlemek_icin_ek_güvenlik_hizmetleriyle_ilgilenir_misiniz'] ?? '-';
-                            $crypto = $row['tüm_cüzdanlarınızda_şu_andan_ne_kadar_kriptonuz_bulunuyor'] ?? '-';
+                            // Form Answers pre-extracted by ImportService
+                            $fraud = $row['form_fraud'] ?? '-';
+                            $loss = $row['form_loss'] ?? '-';
+                            $wallet = $row['form_wallet'] ?? '-';
+                            $complaint = $row['form_complaint'] ?? '-';
+                            $security = $row['form_security'] ?? '-';
+                            $crypto = $row['form_crypto'] ?? '-';
                         @endphp
                         <tr class="hover:bg-slate-50 transition-colors">
                             <td class="px-4 py-3 whitespace-nowrap font-bold text-gray-900">

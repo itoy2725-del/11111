@@ -27,7 +27,7 @@ class ImportService
         $rows = [];
         if (($handle = fopen($filePath, 'r')) !== false) {
             
-            // Read first line to auto-detect delimiter
+            // Auto-detect delimiter
             $firstLine = fgets($handle);
             rewind($handle);
 
@@ -44,101 +44,69 @@ class ImportService
                 return [];
             }
             
-            // Strip invisible Meta Ads zero-width unicode characters (\x{034F}, \x{200B}, \x{FEFF}, etc.)
+            // Strip invisible Unicode & normalize headers
             $headers = array_map(function($h) {
                 $h = preg_replace('/[\x{0000}-\x{001F}\x{007F}-\x{009F}\x{200B}-\x{200D}\x{FEFF}\x{0300}-\x{036F}]/u', '', $h);
                 return strtolower(trim(str_replace([' ', '-'], '_', $h)));
             }, $rawHeaders);
 
-            // Intelligent phone column header finder
-            $phoneHeader = null;
-            foreach ($headers as $h) {
-                if (
-                    str_contains($h, 'telefon') || 
-                    str_contains($h, 'phone') || 
-                    str_contains($h, 'mobile') || 
-                    str_contains($h, 'tel') || 
-                    str_contains($h, 'numar')
-                ) {
-                    $phoneHeader = $h;
-                    break;
-                }
-            }
-
-            // Intelligent email column header finder
-            $emailHeader = null;
-            foreach ($headers as $h) {
-                if (str_contains($h, 'email') || str_contains($h, 'posta') || str_contains($h, 'mail')) {
-                    $emailHeader = $h;
-                    break;
-                }
-            }
-
-            // Intelligent name column header finder
-            $nameHeader = null;
-            foreach ($headers as $h) {
-                if (str_contains($h, 'full_name') || str_contains($h, 'ad_soyad') || str_contains($h, 'name') || str_contains($h, 'isim')) {
-                    $nameHeader = $h;
-                    break;
-                }
-            }
-
-            // Intelligent campaign column header finder
-            $campaignHeader = null;
-            foreach ($headers as $h) {
-                if (str_contains($h, 'campaign') || str_contains($h, 'kampanya')) {
-                    $campaignHeader = $h;
-                    break;
-                }
-            }
-            
             $rawRows = [];
             while (($data = fgetcsv($handle, 10000, $delimiter)) !== false) {
-                if (count($headers) !== count($data)) {
-                    continue;
-                }
-                $rawRows[] = array_combine($headers, $data);
+                if (count($data) === 0) continue;
+                $rawRows[] = $data;
             }
             fclose($handle);
 
-            // Process each row
-            foreach ($rawRows as $row) {
-                $phoneVal = null;
-
-                // 1. Try identified phone header column
-                if ($phoneHeader && !empty($row[$phoneHeader])) {
-                    $phoneVal = $row[$phoneHeader];
+            foreach ($rawRows as $data) {
+                $row = [];
+                
+                // Map by normalized header key
+                foreach ($data as $idx => $val) {
+                    if (isset($headers[$idx])) {
+                        $row[$headers[$idx]] = trim($val);
+                    }
+                    $row['col_' . $idx] = trim($val);
                 }
 
-                // 2. Direct search across row cells for Meta phone pattern (p:+90..., +90..., 05..., 5...)
+                // Phone Extraction (by column keyword or index 18 or pattern)
+                $phoneVal = null;
+                foreach ($row as $k => $v) {
+                    if (str_contains($k, 'telefon') || str_contains($k, 'phone')) {
+                        $phoneVal = $v;
+                        break;
+                    }
+                }
+                if (!$phoneVal && isset($data[18])) {
+                    $phoneVal = $data[18];
+                }
                 if (!$phoneVal) {
-                    foreach ($row as $v) {
-                        if (is_string($v) && (str_contains($v, 'p:+') || str_contains($v, '+90') || str_contains($v, '05'))) {
-                            $phoneVal = $v;
-                            break;
-                        }
-                        $cleanDigits = preg_replace('/[^\d]/', '', (string)$v);
-                        if (strlen($cleanDigits) >= 10 && (str_starts_with($cleanDigits, '90') || str_starts_with($cleanDigits, '05') || str_starts_with($cleanDigits, '5'))) {
+                    foreach ($data as $v) {
+                        if (str_contains($v, 'p:+') || str_contains($v, '+90')) {
                             $phoneVal = $v;
                             break;
                         }
                     }
                 }
 
-                // Normalize phone
                 if ($phoneVal) {
                     $phoneVal = preg_replace('/^p:/i', '', trim($phoneVal));
                     $row['normalized_phone'] = $phoneVal;
                 }
 
-                // Email extraction
+                // Email Extraction (by column keyword or index 19 or pattern)
                 $emailVal = null;
-                if ($emailHeader && !empty($row[$emailHeader])) {
-                    $emailVal = $row[$emailHeader];
+                foreach ($row as $k => $v) {
+                    if (str_contains($k, 'posta') || str_contains($k, 'email') || str_contains($k, 'mail')) {
+                        $emailVal = $v;
+                        break;
+                    }
+                }
+                if (!$emailVal && isset($data[19])) {
+                    $emailVal = $data[19];
                 }
                 if (!$emailVal) {
-                    foreach ($row as $v) {
-                        if (is_string($v) && str_contains($v, '@') && str_contains($v, '.')) {
+                    foreach ($data as $v) {
+                        if (str_contains($v, '@') && str_contains($v, '.')) {
                             $emailVal = trim($v);
                             break;
                         }
@@ -148,24 +116,29 @@ class ImportService
                     $row['normalized_email'] = strtolower(trim($emailVal));
                 }
 
-                // Name extraction
-                if ($nameHeader && !empty($row[$nameHeader])) {
-                    $row['ad_soyad'] = trim($row[$nameHeader]);
-                } else {
-                    // Use email username or lead ID as name fallback
-                    if (!empty($row['normalized_email'])) {
-                        $emailUser = explode('@', $row['normalized_email'])[0];
-                        $row['ad_soyad'] = ucfirst(str_replace(['.', '_', '-'], ' ', $emailUser));
-                    } elseif (!empty($row['id'])) {
-                        $row['ad_soyad'] = 'Lead ' . $row['id'];
-                    } else {
-                        $row['ad_soyad'] = 'Meta Lead';
-                    }
-                }
+                // Clean Ad Name & Campaign Name
+                $adName = $data[3] ?? $row['ad_name'] ?? '';
+                $adName = trim(str_replace(['"', 'ag:'], '', $adName));
+                $row['clean_ad_name'] = $adName ?: 'New Leads Ad';
 
-                // Campaign extraction
-                if ($campaignHeader && !empty($row[$campaignHeader])) {
-                    $row['campaign_name'] = trim($row[$campaignHeader]);
+                $campaignName = $data[7] ?? $row['campaign_name'] ?? '';
+                $campaignName = trim(str_replace(['"', 'c:'], '', $campaignName));
+                $row['clean_campaign_name'] = $campaignName ?: 'New Leads Campaign';
+
+                // Extract Form Questions by Index or Keyword
+                $row['form_fraud'] = $data[12] ?? $row['durumunuzu_en_iyi_hangisi_tanimliyor'] ?? '-';
+                $row['form_loss'] = $data[13] ?? $row['ne_kadar_kripto_kaybedildi'] ?? '-';
+                $row['form_wallet'] = $data[14] ?? $row['cuzdan'] ?? '-';
+                $row['form_complaint'] = $data[15] ?? $row['sikayet'] ?? '-';
+                $row['form_security'] = $data[16] ?? $row['ek_guvenlik'] ?? '-';
+                $row['form_crypto'] = $data[17] ?? $row['toplam_kripto'] ?? '-';
+
+                // Derive Ad Soyad
+                if (!empty($row['normalized_email'])) {
+                    $emailUser = explode('@', $row['normalized_email'])[0];
+                    $row['ad_soyad'] = ucfirst(str_replace(['.', '_', '-'], ' ', $emailUser));
+                } else {
+                    $row['ad_soyad'] = 'Meta Lead ' . ($row['col_0'] ?? '');
                 }
 
                 $rows[] = $row;
@@ -227,10 +200,11 @@ class ImportService
                 }
 
                 try {
+                    $createdTimeVal = $row['col_1'] ?? $row['created_time'] ?? null;
                     $createdTime = null;
-                    if (!empty($row['created_time'])) {
+                    if (!empty($createdTimeVal)) {
                         try {
-                            $createdTime = Carbon::parse($row['created_time']);
+                            $createdTime = Carbon::parse($createdTimeVal);
                         } catch (\Throwable $e) {
                             $createdTime = null;
                         }
@@ -238,40 +212,40 @@ class ImportService
 
                     $data = [
                         'ad_soyad' => $row['ad_soyad'] ?? 'Meta Lead',
-                        'meta_lead_id' => $row['id'] ?? null,
+                        'meta_lead_id' => $row['col_0'] ?? $row['id'] ?? null,
                         'created_time' => $createdTime,
-                        'ad_id' => $row['ad_id'] ?? null,
-                        'ad_name' => $row['ad_name'] ?? null,
-                        'adset_id' => $row['adset_id'] ?? null,
-                        'adset_name' => $row['adset_name'] ?? null,
-                        'campaign_id' => $row['campaign_id'] ?? null,
-                        'campaign_name' => $row['campaign_name'] ?? $row['campaign'] ?? null,
-                        'form_id' => $row['form_id'] ?? null,
-                        'form_name' => $row['form_name'] ?? null,
-                        'is_organic' => isset($row['is_organic']) && strtolower((string)$row['is_organic']) === 'true',
-                        'platform' => $row['platform'] ?? null,
+                        'ad_id' => $row['col_2'] ?? null,
+                        'ad_name' => $row['clean_ad_name'] ?? null,
+                        'adset_id' => $row['col_4'] ?? null,
+                        'adset_name' => $row['col_5'] ?? null,
+                        'campaign_id' => $row['col_6'] ?? null,
+                        'campaign_name' => $row['clean_campaign_name'] ?? null,
+                        'form_id' => $row['col_8'] ?? null,
+                        'form_name' => $row['col_9'] ?? null,
+                        'is_organic' => isset($row['col_10']) && strtolower((string)$row['col_10']) === 'true',
+                        'platform' => $row['col_11'] ?? $row['platform'] ?? 'fb',
                         'telefon' => $phone,
                         'email' => $row['normalized_email'] ?? null,
-                        'sikayet_durumu' => $row['polise_siber_suç_yetkililerine_veya_mali_düzenleyicilere_bir_ihbar_şikayet_yaptınız_mı'] ?? null,
-                        'ek_guvenlik_hizmeti' => $row['gelecekteki_kayıpları_önlemek_icin_ek_güvenlik_hizmetleriyle_ilgilenir_misiniz'] ?? null,
-                        'toplam_kripto' => $row['tüm_cüzdanlarınızda_şu_andan_ne_kadar_kriptonuz_bulunuyor'] ?? null,
+                        'sikayet_durumu' => $row['form_complaint'] ?? null,
+                        'ek_guvenlik_hizmeti' => $row['form_security'] ?? null,
+                        'toplam_kripto' => $row['form_crypto'] ?? null,
                         'status_id' => 1,
                     ];
                     
                     // Fraud type lookup
-                    $fraudKey = $row['durumunuz_en_iyisi_hangisi_tanımlıyor'] ?? null;
+                    $fraudKey = $row['form_fraud'] ?? null;
                     if ($fraudKey && isset($fraudTypes[$fraudKey])) {
                         $data['fraud_type_id'] = $fraudTypes[$fraudKey];
                     }
                     
                     // Loss range lookup
-                    $lossKey = $row['ne_kadar_kripto_kaybedildi'] ?? null;
+                    $lossKey = $row['form_loss'] ?? null;
                     if ($lossKey && isset($lossRanges[$lossKey])) {
                         $data['loss_range_id'] = $lossRanges[$lossKey];
                     }
                     
                     // Wallet type lookup
-                    $walletKey = $row['fonlarınızı_göndermek_için_kullandığınız_cüzdanı_seçin'] ?? null;
+                    $walletKey = $row['form_wallet'] ?? null;
                     if ($walletKey && isset($walletTypes[$walletKey])) {
                         $data['wallet_type_id'] = $walletTypes[$walletKey];
                     }
