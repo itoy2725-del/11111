@@ -4,97 +4,122 @@
 
 @section('content')
 <div class="space-y-6">
-    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-md">
-        <div class="flex">
-            <div class="flex-shrink-0">
-                <svg class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
-                </svg>
-            </div>
-            <div class="ml-3">
-                <p class="text-sm text-yellow-700 font-medium">Bu bir önizlemedir. Kayıtlar henüz sisteme eklenmedi.</p>
-            </div>
+    <div class="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-xl text-amber-800 flex items-center space-x-3 shadow-sm">
+        <svg class="w-6 h-6 text-amber-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        <div>
+            <p class="font-bold text-sm">Bu bir önizleme ekranıdır.</p>
+            <p class="text-xs text-amber-700 mt-0.5"><span class="font-bold">{{ $originalName }}</span> dosyasındaki kayıtlar henüz veritabanına eklenmedi. Lütfen aşağıdaki mükerrer kayıt tercihini yapıp aktarımı başlatın.</p>
         </div>
     </div>
 
     <!-- Stats -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div class="card p-4 text-center border-t-4 border-indigo-500">
-            <p class="text-xs font-medium text-gray-500 uppercase">Toplam Kayıt</p>
-            <p class="text-2xl font-bold text-gray-900 mt-1">150</p>
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 text-center border-t-4 border-indigo-500">
+            <p class="text-xs font-semibold text-gray-500 uppercase">Toplam Kayıt</p>
+            <p class="text-3xl font-extrabold text-gray-900 mt-1">{{ number_format($totalCount) }}</p>
         </div>
-        <div class="card p-4 text-center border-t-4 border-green-500">
-            <p class="text-xs font-medium text-gray-500 uppercase">Yeni</p>
-            <p class="text-2xl font-bold text-green-600 mt-1">142</p>
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 text-center border-t-4 border-emerald-500">
+            <p class="text-xs font-semibold text-gray-500 uppercase">Yeni Kayıt</p>
+            <p class="text-3xl font-extrabold text-emerald-600 mt-1">{{ number_format($newCount) }}</p>
         </div>
-        <div class="card p-4 text-center border-t-4 border-yellow-500">
-            <p class="text-xs font-medium text-gray-500 uppercase">Mükerrer</p>
-            <p class="text-2xl font-bold text-yellow-600 mt-1">8</p>
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 text-center border-t-4 border-amber-500">
+            <p class="text-xs font-semibold text-gray-500 uppercase">Mükerrer</p>
+            <p class="text-3xl font-extrabold text-amber-600 mt-1">{{ number_format($duplicateCount) }}</p>
         </div>
-        <div class="card p-4 text-center border-t-4 border-red-500">
-            <p class="text-xs font-medium text-gray-500 uppercase">Hatalı</p>
-            <p class="text-2xl font-bold text-red-600 mt-1">0</p>
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 text-center border-t-4 border-red-500">
+            <p class="text-xs font-semibold text-gray-500 uppercase">Hatalı Satır</p>
+            <p class="text-3xl font-extrabold text-red-600 mt-1">{{ number_format($errorCount) }}</p>
         </div>
     </div>
 
     <!-- Duplicate Action Form -->
-    <div class="card p-6">
-        <form action="{{ route('imports.process') ?? '#' }}" method="POST">
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+        <form action="{{ route('import.process') }}" method="POST" class="space-y-4">
             @csrf
-            <h3 class="font-semibold text-gray-800 mb-4">Mükerrer Kayıt İşlemi</h3>
-            <div class="flex flex-col sm:flex-row gap-4 mb-6">
-                <label class="flex items-center space-x-2">
-                    <input type="radio" name="duplicate_action" value="skip" class="text-indigo-600 focus:ring-indigo-500" checked>
-                    <span class="text-sm text-gray-700">Atla (Kaydetme)</span>
+            <input type="hidden" name="raw_payload" value="{{ $rawPayload }}" />
+
+            <h3 class="font-bold text-gray-800 text-lg">Mükerrer Kayıt İşlem Tercihi</h3>
+            <p class="text-sm text-gray-500">Sistemde daha önceden kayıtlı aynı telefon numarasına sahip mükerrer veriler için ne yapılacağını seçin:</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+                <label class="flex items-center p-4 border border-gray-200 rounded-xl hover:bg-slate-50 cursor-pointer transition-colors">
+                    <input type="radio" name="duplicate_action" value="skip" class="w-4 h-4 text-indigo-600 focus:ring-indigo-500 border-gray-300" checked />
+                    <div class="ml-3">
+                        <span class="block text-sm font-bold text-gray-900">Atla (Mükerrerleri Ekleme)</span>
+                        <span class="block text-xs text-gray-500 mt-0.5">Sadece yeni telefon numaralarını kaydeder.</span>
+                    </div>
                 </label>
-                <label class="flex items-center space-x-2">
-                    <input type="radio" name="duplicate_action" value="update" class="text-indigo-600 focus:ring-indigo-500">
-                    <span class="text-sm text-gray-700">Mevcut Kaydı Güncelle</span>
+                
+                <label class="flex items-center p-4 border border-gray-200 rounded-xl hover:bg-slate-50 cursor-pointer transition-colors">
+                    <input type="radio" name="duplicate_action" value="update" class="w-4 h-4 text-indigo-600 focus:ring-indigo-500 border-gray-300" />
+                    <div class="ml-3">
+                        <span class="block text-sm font-bold text-gray-900">Mevcut Kaydı Güncelle</span>
+                        <span class="block text-xs text-gray-500 mt-0.5">Var olan kaydın bilgilerini yeni CSV ile tazeler.</span>
+                    </div>
                 </label>
-                <label class="flex items-center space-x-2">
-                    <input type="radio" name="duplicate_action" value="create" class="text-indigo-600 focus:ring-indigo-500">
-                    <span class="text-sm text-gray-700">Yeni Kayıt Olarak Ekle</span>
+                
+                <label class="flex items-center p-4 border border-gray-200 rounded-xl hover:bg-slate-50 cursor-pointer transition-colors">
+                    <input type="radio" name="duplicate_action" value="create_new" class="w-4 h-4 text-indigo-600 focus:ring-indigo-500 border-gray-300" />
+                    <div class="ml-3">
+                        <span class="block text-sm font-bold text-gray-900">Yeni Kayıt Olarak Ekle</span>
+                        <span class="block text-xs text-gray-500 mt-0.5">Mükerrer olsa da ayrı bir lead olarak kaydeder.</span>
+                    </div>
                 </label>
             </div>
             
-            <div class="flex justify-end space-x-3 pt-4 border-t border-gray-100">
-                <a href="{{ route('imports.index') }}" class="btn btn-secondary">İptal</a>
-                <button type="submit" class="btn btn-primary">İçe Aktarmayı Başlat</button>
+            <div class="flex justify-between items-center pt-6 border-t border-gray-100 mt-4">
+                <a href="{{ route('import.index') }}" class="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold text-sm rounded-xl transition-colors">
+                    ← İptal Et & Geri Dön
+                </a>
+                <button type="submit" class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-sm shadow-md transition-colors flex items-center space-x-2">
+                    <span>🚀 İçe Aktarmayı Başlat</span>
+                </button>
             </div>
         </form>
     </div>
 
     <!-- Preview Table -->
-    <div class="card overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-100 bg-gray-50">
-            <h3 class="font-semibold text-gray-800">Örnek Veri (İlk 5 Satır)</h3>
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 bg-slate-50">
+            <h3 class="font-bold text-gray-800">Örnek Veri (Önizleme - İlk 10 Satır)</h3>
         </div>
         <div class="overflow-x-auto">
-            <table class="w-full text-sm text-left text-gray-500">
-                <thead class="text-xs text-gray-700 uppercase bg-gray-100">
+            <table class="w-full text-sm text-left text-gray-600">
+                <thead class="text-xs text-gray-500 uppercase bg-slate-50 font-semibold border-b border-gray-200">
                     <tr>
-                        <th class="px-6 py-3">İsim Soyisim</th>
+                        <th class="px-6 py-3">Ad Soyad / ID</th>
                         <th class="px-6 py-3">Telefon</th>
                         <th class="px-6 py-3">Email</th>
                         <th class="px-6 py-3">Kampanya</th>
-                        <th class="px-6 py-3">Durum</th>
+                        <th class="px-6 py-3 text-center">Durum</th>
                     </tr>
                 </thead>
-                <tbody>
-                    <tr class="bg-white border-b">
-                        <td class="px-6 py-4 font-medium text-gray-900">Ali Veli</td>
-                        <td class="px-6 py-4">+90 555 111 2233</td>
-                        <td class="px-6 py-4">ali@example.com</td>
-                        <td class="px-6 py-4">TR_Kampanya</td>
-                        <td class="px-6 py-4"><span class="text-green-600 font-semibold text-xs">Yeni</span></td>
-                    </tr>
-                    <tr class="bg-yellow-50 border-b">
-                        <td class="px-6 py-4 font-medium text-gray-900">Ayşe Yılmaz</td>
-                        <td class="px-6 py-4">+90 555 999 8877</td>
-                        <td class="px-6 py-4">ayse@example.com</td>
-                        <td class="px-6 py-4">TR_Kampanya</td>
-                        <td class="px-6 py-4"><span class="text-yellow-600 font-semibold text-xs">Mükerrer</span></td>
-                    </tr>
+                <tbody class="divide-y divide-gray-100">
+                    @forelse($previewRows as $row)
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-medium text-gray-900">
+                                {{ $row['ad_soyad'] ?? $row['full_name'] ?? $row['id'] ?? 'Meta Lead' }}
+                            </td>
+                            <td class="px-6 py-4 font-mono font-bold text-indigo-600">
+                                {{ $row['normalized_phone'] ?? '-' }}
+                            </td>
+                            <td class="px-6 py-4">
+                                {{ $row['normalized_email'] ?? '-' }}
+                            </td>
+                            <td class="px-6 py-4 text-xs font-semibold text-gray-600">
+                                {{ $row['campaign_name'] ?? '-' }}
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
+                                    Hazır
+                                </span>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="5" class="px-6 py-4 text-center text-gray-500">Önizleme satırı bulunmuyor.</td>
+                        </tr>
+                    @endforelse
                 </tbody>
             </table>
         </div>
