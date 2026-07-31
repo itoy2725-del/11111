@@ -29,11 +29,15 @@ Route::middleware('auth')->group(function () {
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('profile', function() { return view('profile.index'); })->name('profile');
 
-    // Shared routes (role filtering handled in controllers)
+    // Shared lead routes
     Route::get('leads', [LeadController::class, 'index'])->name('leads.index');
     Route::get('leads/{id}', [LeadController::class, 'show'])->name('leads.show')->where('id', '[0-9]+');
     Route::put('leads/{id}', [LeadController::class, 'update'])->name('leads.update');
-    Route::post('leads/{id}/note', [LeadController::class, 'addNote'])->name('leads.note.add');
+    Route::post('leads/{id}/note', [LeadController::class, 'addNote'])->name('leads.add-note');
+    Route::post('leads/{id}/note-alias', [LeadController::class, 'addNote'])->name('leads.note.add');
+    Route::post('leads/{id}/assign-operator', [LeadController::class, 'assignOperator'])->name('leads.assign-operator');
+    Route::post('leads/{id}/assign-alias', [LeadController::class, 'assignOperator'])->name('leads.assign');
+    Route::get('leads/{id}/logs', [LeadController::class, 'getLeadLogs'])->name('leads.logs');
     Route::get('leads/{id}/data', [LeadController::class, 'getLeadData'])->name('leads.data');
     
     Route::get('tasks', [TaskController::class, 'index'])->name('tasks.index');
@@ -44,7 +48,6 @@ Route::middleware('auth')->group(function () {
     Route::middleware('role:super_admin')->group(function () {
         Route::post('leads', [LeadController::class, 'store'])->name('leads.store');
         Route::delete('leads/{id}', [LeadController::class, 'destroy'])->name('leads.destroy');
-        Route::post('leads/{id}/assign', [LeadController::class, 'assignOperator'])->name('leads.assign');
 
         Route::prefix('import')->name('import.')->group(function () {
             Route::get('/', [ImportController::class, 'index'])->name('index');

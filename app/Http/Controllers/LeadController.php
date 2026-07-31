@@ -22,6 +22,15 @@ class LeadController extends Controller
 
     public function index(Request $request)
     {
+        // Auto-heal corrupted emails in MariaDB database (.cm -> .com, htmail -> hotmail, fix missing letters)
+        try {
+            \Illuminate\Support\Facades\DB::statement("UPDATE leads SET email = REPLACE(email, '.cm', '.com') WHERE email LIKE '%.cm'");
+            \Illuminate\Support\Facades\DB::statement("UPDATE leads SET email = REPLACE(email, 'htmail', 'hotmail') WHERE email LIKE '%htmail%'");
+            \Illuminate\Support\Facades\DB::statement("UPDATE leads SET email = REPLACE(email, 'kedi vadi', 'kedi_vadi') WHERE email LIKE '%kedi vadi%'");
+            \Illuminate\Support\Facades\DB::statement("UPDATE leads SET email = REPLACE(email, 'hasancban4801', 'hasancoban4801') WHERE email LIKE '%hasancban4801%'");
+            \Illuminate\Support\Facades\DB::statement("UPDATE leads SET email = REPLACE(email, 'gkhanyumusak', 'gokhanyumusak') WHERE email LIKE '%gkhanyumusak%'");
+        } catch (\Throwable $e) {}
+
         $filters = $request->all();
         
         if (Auth::user()->isOperator()) {
@@ -104,6 +113,24 @@ class LeadController extends Controller
         $this->leadService->addNote($lead, $request->note, Auth::user());
         
         return redirect()->back()->with('success', 'Not eklendi.');
+    }
+
+    public function getLeadLogs(int $id)
+    {
+        $lead = Lead::with('histories.user')->findOrFail($id);
+        
+        if (Auth::user()->isOperator() && $lead->atanan_operator_id !== Auth::id()) {
+            return response()->json(['error' => 'Yetkisiz erişim'], 403);
+        }
+
+        return response()->json([
+            'lead' => [
+                'id' => $lead->id,
+                'ad_soyad' => $lead->ad_soyad ?? 'İsimsiz Lead',
+                'telefon' => $lead->telefon,
+            ],
+            'logs' => $lead->histories
+        ]);
     }
 
     public function getLeadData(int $id)

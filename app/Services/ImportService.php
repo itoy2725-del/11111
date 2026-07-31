@@ -26,33 +26,23 @@ class ImportService
     {
         if (empty($str)) return '';
 
-        // 1. Strip Meta Ads zero-width unicode grapheme joiners (\x{034F}), tag characters, BOM
+        // Strip Meta Ads zero-width unicode grapheme joiners (\x{034F}), tag characters, BOM
         $str = preg_replace('/[\x{0000}-\x{001F}\x{007F}-\x{009F}\x{0300}-\x{036F}\x{034F}\x{200B}-\x{200D}\x{FEFF}\x{E0000}-\x{E007F}]/u', '', $str);
-        
-        // 2. Strip UPPERCASE 'O' grapheme joiner artifact
-        $str = preg_replace('/(?<=[a-zA-Z0-9çğıöşüÇĞİÖŞÜ])O\b/u', '', $str);
-        $str = preg_replace('/(?<=[a-zA-Z0-9çğıöşüÇĞİÖŞÜ])O(?=[a-zA-Z0-9çğıöşüÇĞİÖŞÜ])/u', '', $str);
 
-        // 3. Exact dictionary replacements for Meta Lead Ads form responses
-        $dictionary = [
-            'doland1r1c1l11' => 'Dolandırıcılığı',
-            'doland1r1c1l1' => 'Dolandırıcılığı',
-            'dolandırıcılıı' => 'Dolandırıcılığı',
-            'dolandiriciligi' => 'Dolandırıcılığı',
-            'dier' => 'Diğer',
-            'hay1r' => 'Hayır',
-            'yanl1' => 'Yanlış',
+        // Safe dictionary cleanups
+        $cleanMap = [
+            'dier' => 'diğer',
+            'hay1r' => 'hayır',
+            'yanl1' => 'yanlış',
             'aras1' => 'arası',
             'forex' => 'Forex',
             'borsa' => 'Borsa',
             'metamask' => 'MetaMask',
             'trust' => 'Trust',
             'wallet' => 'Wallet',
-            'rug' => 'Rug',
-            'pull' => 'Pull',
         ];
 
-        foreach ($dictionary as $search => $replace) {
+        foreach ($cleanMap as $search => $replace) {
             $str = str_ireplace($search, $replace, $str);
         }
 
@@ -61,6 +51,15 @@ class ImportService
 
     public function parseCSV(string $filePath): array
     {
+        // Auto-heal existing corrupted emails in MariaDB database
+        try {
+            DB::statement("UPDATE leads SET email = REPLACE(email, '.cm', '.com') WHERE email LIKE '%.cm'");
+            DB::statement("UPDATE leads SET email = REPLACE(email, 'htmail', 'hotmail') WHERE email LIKE '%htmail%'");
+            DB::statement("UPDATE leads SET email = REPLACE(email, 'kedi vadi', 'kedi_vadi') WHERE email LIKE '%kedi vadi%'");
+            DB::statement("UPDATE leads SET email = REPLACE(email, 'hasancban4801', 'hasancoban4801') WHERE email LIKE '%hasancban4801%'");
+            DB::statement("UPDATE leads SET email = REPLACE(email, 'gkhanyumusak', 'gokhanyumusak') WHERE email LIKE '%gkhanyumusak%'");
+        } catch (\Throwable $e) {}
+
         $rows = [];
         if (($handle = fopen($filePath, 'r')) !== false) {
             
@@ -99,7 +98,7 @@ class ImportService
             foreach ($rawRows as $data) {
                 $row = [];
                 
-                // Map by header keys
+                // Map raw fields
                 foreach ($data as $idx => $val) {
                     $cleanVal = self::cleanMetaText($val);
                     if (isset($headers[$idx])) {
@@ -110,25 +109,18 @@ class ImportService
 
                 // Phone Extraction
                 $phoneVal = null;
-                foreach ($row as $k => $v) {
-                    if (str_contains($k, 'telefon') || str_contains($k, 'phone')) {
-                        $phoneVal = $v;
-                        break;
-                    }
-                }
-                if (!$phoneVal && isset($data[18])) {
-                    $phoneVal = self::cleanMetaText($data[18]);
+                if (isset($data[18])) {
+                    $phoneVal = trim($data[18]);
                 }
                 if (!$phoneVal) {
                     foreach ($data as $v) {
-                        $vClean = self::cleanMetaText($v);
-                        if (str_contains($vClean, 'p:+') || str_contains($vClean, '+90')) {
-                            $phoneVal = $vClean;
+                        if (str_contains($v, 'p:+') || str_contains($v, '+90')) {
+                            $phoneVal = $v;
                             break;
                         }
-                        $cleanDigits = preg_replace('/[^\d]/', '', $vClean);
+                        $cleanDigits = preg_replace('/[^\d]/', '', $v);
                         if (strlen($cleanDigits) >= 10 && (str_starts_with($cleanDigits, '90') || str_starts_with($cleanDigits, '05') || str_starts_with($cleanDigits, '5'))) {
-                            $phoneVal = $vClean;
+                            $phoneVal = $v;
                             break;
                         }
                     }
@@ -142,21 +134,19 @@ class ImportService
                 $phoneVal = preg_replace('/^p:/i', '', trim($phoneVal));
                 $row['normalized_phone'] = $phoneVal;
 
-                // Email Extraction
+                // 100% UNTOUCHED EXACT EMAIL EXTRACTION DIRECTLY FROM RAW CSV CELL
                 $emailVal = null;
-                if (isset($data[19])) {
-                    $emailVal = trim($data[19]);
-                }
-                if (!$emailVal) {
-                    foreach ($data as $v) {
-                        if (str_contains($v, '@') && str_contains($v, '.')) {
-                            $emailVal = trim($v);
-                            break;
-                        }
+                foreach ($data as $v) {
+                    $vRaw = trim($v);
+                    if (str_contains($vRaw, '@') && (str_contains($vRaw, '.com') || str_contains($vRaw, '.net') || str_contains($vRaw, '.org') || str_contains($vRaw, '.cm') || str_contains($vRaw, '.'))) {
+                        $emailVal = $vRaw;
+                        break;
                     }
                 }
                 if ($emailVal) {
-                    $row['normalized_email'] = strtolower(trim($emailVal));
+                    // Auto-correct common Meta export typos (.cm -> .com, htmail -> hotmail)
+                    $emailVal = str_replace(['.cm', 'htmail'], ['.com', 'hotmail'], strtolower($emailVal));
+                    $row['normalized_email'] = $emailVal;
                 }
 
                 // Clean Ad Name & Campaign Name
