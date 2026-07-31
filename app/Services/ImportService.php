@@ -16,21 +16,31 @@ class ImportService
 {
     public function validateHeaders(array $headers): array
     {
-        $required = ['id', 'created_time', 'telefon_numarası', 'e-posta', 'campaign_name'];
         $normalizedHeaders = array_map(function($h) {
-            return strtolower(trim($h));
+            $h = preg_replace('/\x{FEFF}/u', '', $h);
+            return strtolower(trim(str_replace([' ', '-'], '_', $h)));
         }, $headers);
-        
-        $missing = [];
-        foreach ($required as $req) {
-            if (!in_array($req, $normalizedHeaders)) {
-                $missing[] = $req;
+
+        // Check for telephone column in Turkish or English
+        $phoneKeys = ['telefon_numarası', 'telefon', 'phone_number', 'phone', 'mobile'];
+        $hasPhone = false;
+        foreach ($phoneKeys as $key) {
+            if (in_array($key, $normalizedHeaders)) {
+                $hasPhone = true;
+                break;
             }
         }
-        
+
+        if (!$hasPhone) {
+            return [
+                'valid' => false,
+                'missing' => ['Telefon Numarası (telefon_numarası / phone_number)']
+            ];
+        }
+
         return [
-            'valid' => count($missing) === 0,
-            'missing' => $missing
+            'valid' => true,
+            'missing' => []
         ];
     }
 
@@ -44,10 +54,10 @@ class ImportService
                 return [];
             }
             
-            // Normalize headers: remove BOM, trim, lowercase
+            // Normalize headers: remove BOM, trim, lowercase, replace spaces/hyphens
             $headers = array_map(function($h) {
                 $h = preg_replace('/\x{FEFF}/u', '', $h);
-                return strtolower(trim(str_replace(' ', '_', $h)));
+                return strtolower(trim(str_replace([' ', '-'], '_', $h)));
             }, $headers);
             
             while (($data = fgetcsv($handle, 10000, ',')) !== false) {
@@ -57,14 +67,16 @@ class ImportService
                 
                 $row = array_combine($headers, $data);
                 
-                // Telefon normalizasyonu: p:+905399271922 → +905399271922
-                if (isset($row['telefon_numarası'])) {
-                    $row['telefon_numarası'] = preg_replace('/^p:/', '', trim($row['telefon_numarası']));
+                // Flexible phone extraction & normalization: p:+905399271922 → +905399271922
+                $phoneVal = $row['telefon_numarası'] ?? $row['phone_number'] ?? $row['telefon'] ?? $row['phone'] ?? null;
+                if ($phoneVal) {
+                    $row['normalized_phone'] = preg_replace('/^p:/', '', trim($phoneVal));
                 }
                 
-                // Email normalizasyonu
-                if (isset($row['e-posta'])) {
-                    $row['e-posta'] = strtolower(trim($row['e-posta']));
+                // Flexible email extraction
+                $emailVal = $row['e-posta'] ?? $row['email'] ?? null;
+                if ($emailVal) {
+                    $row['normalized_email'] = strtolower(trim($emailVal));
                 }
                 
                 $rows[] = $row;
@@ -83,9 +95,9 @@ class ImportService
         $existingPhones = Lead::pluck('id', 'telefon')->toArray();
         
         foreach ($rows as $index => $row) {
-            $phone = $row['telefon_numarası'] ?? null;
+            $phone = $row['normalized_phone'] ?? null;
             if (!$phone) {
-                $errors[] = "Satır " . ($index + 2) . ": Telefon numarası eksik";
+                $errors[] = "Satır " . ($index + 2) . ": Telefon numarası bulunamadı";
                 continue;
             }
             
@@ -109,7 +121,7 @@ class ImportService
 
     public function processImport(array $rows, string $duplicateAction, int $userId, string $fileName = null): Import
     {
-        return DB::transaction(function () use ($rows, $duplicateAction, $userId) {
+        return DB::transaction(function () use ($rows, $duplicateAction, $userId, $fileName) {
             $basarili = 0;
             $mukerrer = 0;
             $hataSayisi = 0;
@@ -119,7 +131,7 @@ class ImportService
             $walletTypes = WalletType::pluck('id', 'isim')->toArray();
             
             foreach ($rows as $row) {
-                $phone = $row['telefon_numarası'] ?? null;
+                $phone = $row['normalized_phone'] ?? null;
                 if (!$phone) {
                     $hataSayisi++;
                     continue;
@@ -140,7 +152,7 @@ class ImportService
                         'is_organic' => isset($row['is_organic']) && strtolower($row['is_organic']) === 'true',
                         'platform' => $row['platform'] ?? null,
                         'telefon' => $phone,
-                        'email' => $row['e-posta'] ?? null,
+                        'email' => $row['normalized_email'] ?? null,
                         'sikayet_durumu' => $row['polise_siber_suç_yetkililerine_veya_mali_düzenleyicilere_bir_ihbar_şikayet_yaptınız_mı'] ?? null,
                         'ek_guvenlik_hizmeti' => $row['gelecekteki_kayıpları_önlemek_icin_ek_güvenlik_hizmetleriyle_ilgilenir_misiniz'] ?? null,
                         'toplam_kripto' => $row['tüm_cüzdanlarınızda_şu_andan_ne_kadar_kriptonuz_bulunuyor'] ?? null,
