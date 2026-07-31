@@ -107,6 +107,7 @@
                             $email = $row['normalized_email'] ?? '-';
                             $adName = trim(str_replace('"', '', $row['ad_name'] ?? ''));
                             $campaignName = trim(str_replace('"', '', $row['campaign_name'] ?? ''));
+                            $platform = strtoupper($row['platform'] ?? 'FB');
                             $createdTime = '-';
                             if (!empty($row['created_time'])) {
                                 try {
