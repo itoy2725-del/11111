@@ -27,15 +27,15 @@ class ImportService
         $rows = [];
         if (($handle = fopen($filePath, 'r')) !== false) {
             
-            // Auto-detect CSV delimiter (Semicolon ';' vs Comma ',' vs Tab '\t')
+            // Read first line to auto-detect delimiter
             $firstLine = fgets($handle);
             rewind($handle);
 
             $delimiter = ',';
-            if (substr_count($firstLine, ';') > substr_count($firstLine, ',')) {
-                $delimiter = ';';
-            } elseif (substr_count($firstLine, "\t") > substr_count($firstLine, ',')) {
+            if (substr_count($firstLine, "\t") >= 2) {
                 $delimiter = "\t";
+            } elseif (substr_count($firstLine, ';') > substr_count($firstLine, ',')) {
+                $delimiter = ';';
             }
 
             $rawHeaders = fgetcsv($handle, 10000, $delimiter);
@@ -44,13 +44,13 @@ class ImportService
                 return [];
             }
             
-            // Normalize headers: remove BOM, trim, lowercase, replace spaces/hyphens
+            // Strip invisible Meta Ads zero-width unicode characters (\x{034F}, \x{200B}, \x{FEFF}, etc.)
             $headers = array_map(function($h) {
-                $h = preg_replace('/\x{FEFF}/u', '', $h);
+                $h = preg_replace('/[\x{0000}-\x{001F}\x{007F}-\x{009F}\x{200B}-\x{200D}\x{FEFF}\x{0300}-\x{036F}]/u', '', $h);
                 return strtolower(trim(str_replace([' ', '-'], '_', $h)));
             }, $rawHeaders);
 
-            // Intelligent phone column detection
+            // Intelligent phone column header finder
             $phoneHeader = null;
             foreach ($headers as $h) {
                 if (
@@ -65,7 +65,7 @@ class ImportService
                 }
             }
 
-            // Intelligent email column detection
+            // Intelligent email column header finder
             $emailHeader = null;
             foreach ($headers as $h) {
                 if (str_contains($h, 'email') || str_contains($h, 'posta') || str_contains($h, 'mail')) {
@@ -74,16 +74,16 @@ class ImportService
                 }
             }
 
-            // Intelligent name column detection
+            // Intelligent name column header finder
             $nameHeader = null;
             foreach ($headers as $h) {
-                if (str_contains($h, 'full_name') || str_contains($h, 'ad_soyad') || str_contains($h, 'name') || str_contains($h, 'isim') || str_contains($h, 'ad')) {
+                if (str_contains($h, 'full_name') || str_contains($h, 'ad_soyad') || str_contains($h, 'name') || str_contains($h, 'isim')) {
                     $nameHeader = $h;
                     break;
                 }
             }
 
-            // Intelligent campaign column detection
+            // Intelligent campaign column header finder
             $campaignHeader = null;
             foreach ($headers as $h) {
                 if (str_contains($h, 'campaign') || str_contains($h, 'kampanya')) {
@@ -101,45 +101,70 @@ class ImportService
             }
             fclose($handle);
 
-            // Fallback: If no phone header matched keywords, inspect first row data for phone patterns
-            if (!$phoneHeader && !empty($rawRows)) {
-                $firstRow = $rawRows[0];
-                foreach ($firstRow as $col => $val) {
-                    $cleanVal = preg_replace('/[^\d]/', '', (string)$val);
-                    if (strlen($cleanVal) >= 7 && (str_starts_with($cleanVal, '90') || str_starts_with($cleanVal, '05') || str_starts_with($cleanVal, '5'))) {
-                        $phoneHeader = $col;
-                        break;
-                    }
-                }
-            }
-
-            // Build final normalized rows
+            // Process each row
             foreach ($rawRows as $row) {
-                $phoneVal = $phoneHeader ? ($row[$phoneHeader] ?? null) : null;
+                $phoneVal = null;
+
+                // 1. Try identified phone header column
+                if ($phoneHeader && !empty($row[$phoneHeader])) {
+                    $phoneVal = $row[$phoneHeader];
+                }
+
+                // 2. Direct search across row cells for Meta phone pattern (p:+90..., +90..., 05..., 5...)
                 if (!$phoneVal) {
                     foreach ($row as $v) {
-                        $c = preg_replace('/[^\d]/', '', (string)$v);
-                        if (strlen($c) >= 7 && (str_starts_with($c, '90') || str_starts_with($c, '05') || str_starts_with($c, '5'))) {
+                        if (is_string($v) && (str_contains($v, 'p:+') || str_contains($v, '+90') || str_contains($v, '05'))) {
+                            $phoneVal = $v;
+                            break;
+                        }
+                        $cleanDigits = preg_replace('/[^\d]/', '', (string)$v);
+                        if (strlen($cleanDigits) >= 10 && (str_starts_with($cleanDigits, '90') || str_starts_with($cleanDigits, '05') || str_starts_with($cleanDigits, '5'))) {
                             $phoneVal = $v;
                             break;
                         }
                     }
                 }
 
+                // Normalize phone
                 if ($phoneVal) {
-                    $row['normalized_phone'] = preg_replace('/^p:/', '', trim($phoneVal));
+                    $phoneVal = preg_replace('/^p:/i', '', trim($phoneVal));
+                    $row['normalized_phone'] = $phoneVal;
                 }
 
-                $emailVal = $emailHeader ? ($row[$emailHeader] ?? null) : null;
+                // Email extraction
+                $emailVal = null;
+                if ($emailHeader && !empty($row[$emailHeader])) {
+                    $emailVal = $row[$emailHeader];
+                }
+                if (!$emailVal) {
+                    foreach ($row as $v) {
+                        if (is_string($v) && str_contains($v, '@') && str_contains($v, '.')) {
+                            $emailVal = trim($v);
+                            break;
+                        }
+                    }
+                }
                 if ($emailVal) {
                     $row['normalized_email'] = strtolower(trim($emailVal));
                 }
 
-                if ($nameHeader && isset($row[$nameHeader])) {
+                // Name extraction
+                if ($nameHeader && !empty($row[$nameHeader])) {
                     $row['ad_soyad'] = trim($row[$nameHeader]);
+                } else {
+                    // Use email username or lead ID as name fallback
+                    if (!empty($row['normalized_email'])) {
+                        $emailUser = explode('@', $row['normalized_email'])[0];
+                        $row['ad_soyad'] = ucfirst(str_replace(['.', '_', '-'], ' ', $emailUser));
+                    } elseif (!empty($row['id'])) {
+                        $row['ad_soyad'] = 'Lead ' . $row['id'];
+                    } else {
+                        $row['ad_soyad'] = 'Meta Lead';
+                    }
                 }
 
-                if ($campaignHeader && isset($row[$campaignHeader])) {
+                // Campaign extraction
+                if ($campaignHeader && !empty($row[$campaignHeader])) {
                     $row['campaign_name'] = trim($row[$campaignHeader]);
                 }
 
@@ -203,7 +228,7 @@ class ImportService
 
                 try {
                     $data = [
-                        'ad_soyad' => $row['ad_soyad'] ?? $row['full_name'] ?? $row['name'] ?? null,
+                        'ad_soyad' => $row['ad_soyad'] ?? 'Meta Lead',
                         'meta_lead_id' => $row['id'] ?? null,
                         'created_time' => isset($row['created_time']) ? Carbon::parse($row['created_time']) : null,
                         'ad_id' => $row['ad_id'] ?? null,
@@ -214,7 +239,7 @@ class ImportService
                         'campaign_name' => $row['campaign_name'] ?? $row['campaign'] ?? null,
                         'form_id' => $row['form_id'] ?? null,
                         'form_name' => $row['form_name'] ?? null,
-                        'is_organic' => isset($row['is_organic']) && strtolower($row['is_organic']) === 'true',
+                        'is_organic' => isset($row['is_organic']) && strtolower((string)$row['is_organic']) === 'true',
                         'platform' => $row['platform'] ?? null,
                         'telefon' => $phone,
                         'email' => $row['normalized_email'] ?? null,
