@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Lead;
 use App\Models\Import;
 use App\Models\FraudType;
+replace_or_insert:
 use App\Models\LossRange;
 use App\Models\WalletType;
 use App\Models\LeadHistory;
@@ -26,33 +27,40 @@ class ImportService
     {
         if (empty($str)) return '';
 
-        // Strip Meta Ads zero-width unicode grapheme joiners (\x{034F}), tag characters (\x{E0000}-\x{E007F}), BOM, etc.
+        // Strip Meta Ads zero-width unicode grapheme joiners (\x{034F}), tag characters, BOM
         $str = preg_replace('/[\x{0000}-\x{001F}\x{007F}-\x{009F}\x{0300}-\x{036F}\x{034F}\x{200B}-\x{200D}\x{FEFF}\x{E0000}-\x{E007F}]/u', '', $str);
         
-        // Fix distorted character pattern e.g., dOoOlOaOrO -> dolar
-        $str = preg_replace('/([a-zA-Z0-9çğıöşüÇĞİÖŞÜ])O(?=[a-zA-Z0-9çğıöşüÇĞİÖŞÜ])/u', '$1', $str);
+        // Strip trailing 'O' inserted by zero-width joiner regex artifact (e.g., dolarO -> dolar, metamaskO -> metamask)
+        $str = preg_replace('/(?<=[a-zA-Z0-9çğıöşüÇĞİÖŞÜ])O\b/iu', '', $str);
+        $str = preg_replace('/(?<=[a-zA-Z0-9çğıöşüÇĞİÖŞÜ])O(?=[a-zA-Z0-9çğıöşüÇĞİÖŞÜ])/iu', '', $str);
         
-        // Normalize common Turkish typos from raw Meta exports
-        $trReplacements = [
-            'dier' => 'diğer',
-            'hay1r' => 'hayır',
-            'yanl1' => 'yanlış',
-            'fOoOrOeOxO' => 'forex',
-            'dOoOlOaOrO' => 'dolar',
-            'tOrOuOsOtO' => 'trust',
-            'wOaOlOlOeOtO' => 'wallet',
-            'mOeOtOaOmOaOsOkO' => 'metamask',
-            'bOoOrOsOaO' => 'borsa',
-            'rOuOgO' => 'rug',
-            'pOuOlOlO' => 'pull',
-            '_' => ' ',
+        // Replace '1' with 'ı' in Turkish words (e.g., doland1r1c1l11 -> dolandırıcılığı)
+        $str = preg_replace('/(?<=[a-zA-ZçğıöşüÇĞİÖŞÜ])1(?=[a-zA-ZçğıöşüÇĞİÖŞÜ1\s]|$)/u', 'ı', $str);
+
+        // Exact phrase cleanups for Meta Ads export values
+        $cleanMap = [
+            'forexo' => 'Forex',
+            'dolaro' => 'Dolar',
+            'metamasko' => 'MetaMask',
+            'trusto' => 'Trust',
+            'walleto' => 'Wallet',
+            'borsao' => 'Borsa',
+            'rugo' => 'Rug',
+            'pullo' => 'Pull',
+            'dier' => 'Diğer',
+            'hay1r' => 'Hayır',
+            'yanl1' => 'Yanlış',
+            'doland1r1c1l11' => 'Dolandırıcılığı',
+            'doland1r1c1l1' => 'Dolandırıcılığı',
+            'doland1r1c1l1' => 'Dolandırıcılığı',
+            'aras1' => 'arası',
         ];
 
-        foreach ($trReplacements as $search => $replace) {
+        foreach ($cleanMap as $search => $replace) {
             $str = str_ireplace($search, $replace, $str);
         }
 
-        return trim(preg_replace('/\s+/', ' ', $str));
+        return trim(preg_replace('/\s+/', ' ', str_replace('_', ' ', $str)));
     }
 
     public function parseCSV(string $filePath): array
