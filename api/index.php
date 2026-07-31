@@ -1,37 +1,32 @@
 <?php
 
 /**
- * Vercel Serverless Entrypoint & Diagnostic Exception Handler
+ * Vercel Serverless Entrypoint & Storage Handler
  */
 
-ini_set('display_errors', '1');
-ini_set('display_startup_errors', '1');
-error_reporting(E_ALL);
+$tmpStorage = '/tmp/storage';
+$directories = [
+    $tmpStorage . '/framework/views',
+    $tmpStorage . '/framework/cache/data',
+    $tmpStorage . '/framework/sessions',
+    $tmpStorage . '/logs',
+];
+
+foreach ($directories as $dir) {
+    if (!file_exists($dir)) {
+        @mkdir($dir, 0755, true);
+    }
+}
+
+putenv("VIEW_COMPILED_PATH={$tmpStorage}/framework/views");
+$_ENV['VIEW_COMPILED_PATH'] = "{$tmpStorage}/framework/views";
+$_SERVER['VIEW_COMPILED_PATH'] = "{$tmpStorage}/framework/views";
+
+putenv("LOG_CHANNEL=stderr");
+$_ENV['LOG_CHANNEL'] = "stderr";
 
 try {
-    // Ephemeral /tmp storage setup for Vercel
-    $tmpStorage = '/tmp/storage';
-    $directories = [
-        $tmpStorage . '/framework/views',
-        $tmpStorage . '/framework/cache/data',
-        $tmpStorage . '/framework/sessions',
-        $tmpStorage . '/logs',
-        '/tmp/bootstrap/cache',
-    ];
-
-    foreach ($directories as $dir) {
-        if (!file_exists($dir)) {
-            @mkdir($dir, 0755, true);
-        }
-    }
-
-    putenv("VIEW_COMPILED_PATH={$tmpStorage}/framework/views");
-    $_ENV['VIEW_COMPILED_PATH'] = "{$tmpStorage}/framework/views";
-    putenv("LOG_CHANNEL=stderr");
-    $_ENV['LOG_CHANNEL'] = "stderr";
-
     require __DIR__ . '/../public/index.php';
-
 } catch (\Throwable $e) {
     http_response_code(500);
     header('Content-Type: text/html; charset=utf-8');
