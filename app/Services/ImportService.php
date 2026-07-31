@@ -26,12 +26,35 @@ class ImportService
     {
         if (empty($str)) return '';
 
-        // Strip Meta Ads zero-width unicode grapheme joiners (\x{034F}), tag characters, BOM
+        // 1. Strip Meta Ads zero-width unicode grapheme joiners (\x{034F}), tag characters, BOM
         $str = preg_replace('/[\x{0000}-\x{001F}\x{007F}-\x{009F}\x{0300}-\x{036F}\x{034F}\x{200B}-\x{200D}\x{FEFF}\x{E0000}-\x{E007F}]/u', '', $str);
         
-        // Strip only UPPERCASE 'O' inserted by UTF-8 grapheme joiners (DO NOT use /i flag!)
+        // 2. Strip UPPERCASE 'O' grapheme joiner artifact
         $str = preg_replace('/(?<=[a-zA-Z0-9çğıöşüÇĞİÖŞÜ])O\b/u', '', $str);
         $str = preg_replace('/(?<=[a-zA-Z0-9çğıöşüÇĞİÖŞÜ])O(?=[a-zA-Z0-9çğıöşüÇĞİÖŞÜ])/u', '', $str);
+
+        // 3. Exact dictionary replacements for Meta Lead Ads form responses
+        $dictionary = [
+            'doland1r1c1l11' => 'Dolandırıcılığı',
+            'doland1r1c1l1' => 'Dolandırıcılığı',
+            'dolandırıcılıı' => 'Dolandırıcılığı',
+            'dolandiriciligi' => 'Dolandırıcılığı',
+            'dier' => 'Diğer',
+            'hay1r' => 'Hayır',
+            'yanl1' => 'Yanlış',
+            'aras1' => 'arası',
+            'forex' => 'Forex',
+            'borsa' => 'Borsa',
+            'metamask' => 'MetaMask',
+            'trust' => 'Trust',
+            'wallet' => 'Wallet',
+            'rug' => 'Rug',
+            'pull' => 'Pull',
+        ];
+
+        foreach ($dictionary as $search => $replace) {
+            $str = str_ireplace($search, $replace, $str);
+        }
 
         return trim(preg_replace('/\s+/', ' ', str_replace('_', ' ', $str)));
     }
@@ -85,7 +108,7 @@ class ImportService
                     $row['col_' . $idx] = $cleanVal;
                 }
 
-                // Phone Extraction (by keyword or index 18 or string pattern)
+                // Phone Extraction
                 $phoneVal = null;
                 foreach ($row as $k => $v) {
                     if (str_contains($k, 'telefon') || str_contains($k, 'phone')) {
@@ -111,7 +134,6 @@ class ImportService
                     }
                 }
 
-                // Filter out empty trailing/header rows without a valid phone number
                 if (!$phoneVal) {
                     continue;
                 }
@@ -120,7 +142,7 @@ class ImportService
                 $phoneVal = preg_replace('/^p:/i', '', trim($phoneVal));
                 $row['normalized_phone'] = $phoneVal;
 
-                // Email Extraction (keep raw email string clean without modification)
+                // Email Extraction
                 $emailVal = null;
                 if (isset($data[19])) {
                     $emailVal = trim($data[19]);
