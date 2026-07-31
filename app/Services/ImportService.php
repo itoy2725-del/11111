@@ -24,7 +24,7 @@ class ImportService
 
     public static function formatCryptoAmount(?string $str): string
     {
-        if (empty($str) || $str === '-') return '-';
+        if (empty($str) || $str === '-' || $str === 'Belirtilmedi') return 'Belirtilmedi';
 
         $lower = strtolower($str);
 
@@ -53,15 +53,18 @@ class ImportService
 
         // Safe dictionary cleanups
         $cleanMap = [
-            'dier' => 'diğer',
-            'hay1r' => 'hayır',
-            'yanl1' => 'yanlış',
-            'aras1' => 'arası',
-            'forex' => 'Forex',
-            'borsa' => 'Borsa',
+            'forex doland1r1c1l11' => 'Forex Dolandırıcılığı',
+            'forex dolandiriciligi' => 'Forex Dolandırıcılığı',
+            'forex' => 'Forex Dolandırıcılığı',
+            'borsa' => 'Borsa Dolandırıcılığı',
             'metamask' => 'MetaMask',
-            'trust' => 'Trust',
+            'trust' => 'Trust Wallet',
             'wallet' => 'Wallet',
+            'dier' => 'Diğer',
+            'diger' => 'Diğer',
+            'hay1r' => 'Hayır',
+            'yanl1' => 'Yanlış',
+            'aras1' => 'Arası',
         ];
 
         foreach ($cleanMap as $search => $replace) {
@@ -73,7 +76,7 @@ class ImportService
 
     public function parseCSV(string $filePath): array
     {
-        // Auto-heal existing corrupted emails & missing loss ranges in MariaDB database
+        // Auto-heal existing database records
         try {
             DB::statement("UPDATE leads SET email = REPLACE(email, '.cm', '.com') WHERE email LIKE '%.cm'");
             DB::statement("UPDATE leads SET email = REPLACE(email, 'htmail', 'hotmail') WHERE email LIKE '%htmail%'");
@@ -81,7 +84,7 @@ class ImportService
             DB::statement("UPDATE leads SET email = REPLACE(email, 'hasancban4801', 'hasancoban4801') WHERE email LIKE '%hasancban4801%'");
             DB::statement("UPDATE leads SET email = REPLACE(email, 'gkhanyumusak', 'gokhanyumusak') WHERE email LIKE '%gkhanyumusak%'");
 
-            // Auto-map empty loss_range_id records
+            // Auto-heal empty loss_range_id records
             DB::statement("UPDATE leads SET loss_range_id = 1 WHERE loss_range_id IS NULL AND (toplam_kripto LIKE '%1000%' OR sikayet_durumu LIKE '%1000%')");
             DB::statement("UPDATE leads SET loss_range_id = 3 WHERE loss_range_id IS NULL AND (toplam_kripto LIKE '%1.000 - 10.000%' OR sikayet_durumu LIKE '%1.000 - 10.000%')");
             DB::statement("UPDATE leads SET loss_range_id = 4 WHERE loss_range_id IS NULL AND (toplam_kripto LIKE '%10.000 - 50.000%' OR sikayet_durumu LIKE '%10.000 - 50.000%')");
@@ -185,13 +188,54 @@ class ImportService
                 $campaignName = trim(str_replace(['"', 'c:'], '', $campaignName));
                 $row['clean_campaign_name'] = $campaignName ?: 'New Leads Campaign';
 
-                // Extract Form Answers by Index (Index 13: Kayıp Miktarı)
-                $row['form_fraud'] = self::cleanMetaText($data[12] ?? $row['durumunuzu_en_iyi_hangisi_tanimliyor'] ?? '-');
-                $row['form_loss'] = self::cleanMetaText($data[13] ?? $row['ne_kadar_kripto_kaybedildi'] ?? '-');
-                $row['form_wallet'] = self::cleanMetaText($data[14] ?? $row['cuzdan'] ?? '-');
-                $row['form_complaint'] = self::cleanMetaText($data[15] ?? $row['sikayet'] ?? '-');
-                $row['form_security'] = self::cleanMetaText($data[16] ?? $row['ek_guvenlik'] ?? '-');
-                $row['form_crypto'] = self::cleanMetaText($data[17] ?? $row['toplam_kripto'] ?? '-');
+                // --- INTELLIGENT ROW SCANNER FOR FORM ANSWERS ---
+                
+                // 1. Fraud Type Scanner
+                $fraudVal = self::cleanMetaText($data[12] ?? '');
+                if (empty($fraudVal) || $fraudVal === '-') {
+                    foreach ($data as $cell) {
+                        $cellClean = self::cleanMetaText($cell);
+                        if (str_contains(strtolower($cellClean), 'forex') || str_contains(strtolower($cellClean), 'borsa') || str_contains(strtolower($cellClean), 'dolandır')) {
+                            $fraudVal = $cellClean;
+                            break;
+                        }
+                    }
+                }
+                $row['form_fraud'] = $fraudVal ?: 'Diğer';
+
+                // 2. Loss Range Scanner (Scans cells 13, 17, or ANY cell containing currency figures)
+                $lossVal = self::cleanMetaText($data[13] ?? '');
+                if (empty($lossVal) || $lossVal === '-') {
+                    $lossVal = self::cleanMetaText($data[17] ?? '');
+                }
+                if (empty($lossVal) || $lossVal === '-') {
+                    foreach ($data as $cell) {
+                        $cellClean = self::cleanMetaText($cell);
+                        if (str_contains(strtolower($cellClean), 'dolar') || str_contains(strtolower($cellClean), 'usd') || str_contains($cellClean, '1000') || str_contains($cellClean, '10.000') || str_contains($cellClean, '50.000')) {
+                            $lossVal = $cellClean;
+                            break;
+                        }
+                    }
+                }
+                $row['form_loss'] = $lossVal ?: 'Belirtilmedi';
+
+                // 3. Wallet Type Scanner
+                $walletVal = self::cleanMetaText($data[14] ?? '');
+                if (empty($walletVal) || $walletVal === '-') {
+                    foreach ($data as $cell) {
+                        $cellClean = self::cleanMetaText($cell);
+                        if (str_contains(strtolower($cellClean), 'metamask') || str_contains(strtolower($cellClean), 'trust') || str_contains(strtolower($cellClean), 'wallet')) {
+                            $walletVal = $cellClean;
+                            break;
+                        }
+                    }
+                }
+                $row['form_wallet'] = $walletVal ?: 'Diğer';
+
+                // 4. Complaint Status, Security, Crypto
+                $row['form_complaint'] = self::cleanMetaText($data[15] ?? 'Hayır');
+                $row['form_security'] = self::cleanMetaText($data[16] ?? 'Evet');
+                $row['form_crypto'] = self::cleanMetaText($data[17] ?? $row['form_loss']);
 
                 // Derive Ad Soyad
                 if (!empty($row['normalized_email'])) {
@@ -286,16 +330,25 @@ class ImportService
                         'platform' => $row['col_11'] ?? $row['platform'] ?? 'fb',
                         'telefon' => $phone,
                         'email' => $row['normalized_email'] ?? null,
-                        'sikayet_durumu' => $row['form_complaint'] ?? null,
-                        'ek_guvenlik_hizmeti' => $row['form_security'] ?? null,
+                        'sikayet_durumu' => $row['form_complaint'] ?? 'Hayır',
+                        'ek_guvenlik_hizmeti' => $row['form_security'] ?? 'Evet',
                         'toplam_kripto' => $row['form_crypto'] ?? null,
                         'status_id' => 1,
                     ];
                     
                     // Fraud type lookup
                     $fraudKey = $row['form_fraud'] ?? null;
-                    if ($fraudKey && isset($fraudTypes[$fraudKey])) {
-                        $data['fraud_type_id'] = $fraudTypes[$fraudKey];
+                    if ($fraudKey) {
+                        $fraudKeyLower = strtolower($fraudKey);
+                        if (str_contains($fraudKeyLower, 'forex')) {
+                            $data['fraud_type_id'] = 1; // Forex Dolandırıcılığı
+                        } elseif (str_contains($fraudKeyLower, 'borsa')) {
+                            $data['fraud_type_id'] = 2; // Borsa Dolandırıcılığı
+                        } elseif (isset($fraudTypes[$fraudKey])) {
+                            $data['fraud_type_id'] = $fraudTypes[$fraudKey];
+                        } else {
+                            $data['fraud_type_id'] = 5; // Diğer
+                        }
                     }
                     
                     // SMART Loss Range Lookup (matches Meta CSV answers to LossRange database records)
@@ -314,11 +367,18 @@ class ImportService
                             $data['loss_range_id'] = $lossRanges[$lossKey];
                         }
                     }
-                    
+
                     // Wallet type lookup
                     $walletKey = $row['form_wallet'] ?? null;
-                    if ($walletKey && isset($walletTypes[$walletKey])) {
-                        $data['wallet_type_id'] = $walletTypes[$walletKey];
+                    if ($walletKey) {
+                        $walletKeyLower = strtolower($walletKey);
+                        if (str_contains($walletKeyLower, 'metamask')) {
+                            $data['wallet_type_id'] = 1;
+                        } elseif (str_contains($walletKeyLower, 'trust')) {
+                            $data['wallet_type_id'] = 2;
+                        } elseif (isset($walletTypes[$walletKey])) {
+                            $data['wallet_type_id'] = $walletTypes[$walletKey];
+                        }
                     }
 
                     $existing = Lead::where('telefon', $phone)->first();

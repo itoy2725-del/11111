@@ -89,12 +89,14 @@
                 <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
                     @forelse($leads as $lead)
                         @php
-                            $fraud = \App\Services\ImportService::cleanMetaText($lead->fraudType->isim ?? $lead->sikayet_durumu ?? '-');
-                            $loss = \App\Services\ImportService::formatCryptoAmount($lead->lossRange->isim ?? '-');
-                            $wallet = \App\Services\ImportService::cleanMetaText($lead->walletType->isim ?? '-');
-                            $complaint = \App\Services\ImportService::cleanMetaText($lead->sikayet_durumu ?? '-');
-                            $security = \App\Services\ImportService::cleanMetaText($lead->ek_guvenlik_hizmeti ?? '-');
-                            $crypto = \App\Services\ImportService::formatCryptoAmount($lead->toplam_kripto ?? '-');
+                            $fraud = \App\Services\ImportService::cleanMetaText($lead->fraudType->isim ?? 'Diğer');
+                            $lossRaw = $lead->lossRange->isim ?? $lead->toplam_kripto ?? null;
+                            $loss = \App\Services\ImportService::formatCryptoAmount($lossRaw);
+                            if (empty($loss) || $loss === '-') { $loss = 'Belirtilmedi'; }
+                            $wallet = \App\Services\ImportService::cleanMetaText($lead->walletType->isim ?? 'Diğer');
+                            $complaint = \App\Services\ImportService::cleanMetaText($lead->sikayet_durumu ?: 'Hayır');
+                            $security = \App\Services\ImportService::cleanMetaText($lead->ek_guvenlik_hizmeti ?: 'Evet');
+                            $crypto = \App\Services\ImportService::formatCryptoAmount($lead->toplam_kripto ?: $lossRaw);
                         @endphp
                         <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                             <!-- Ad Soyad & ID -->
