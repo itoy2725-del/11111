@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Models\Lead;
 use App\Models\Import;
 use App\Models\FraudType;
-replace_or_insert:
 use App\Models\LossRange;
 use App\Models\WalletType;
 use App\Models\LeadHistory;
@@ -30,35 +29,9 @@ class ImportService
         // Strip Meta Ads zero-width unicode grapheme joiners (\x{034F}), tag characters, BOM
         $str = preg_replace('/[\x{0000}-\x{001F}\x{007F}-\x{009F}\x{0300}-\x{036F}\x{034F}\x{200B}-\x{200D}\x{FEFF}\x{E0000}-\x{E007F}]/u', '', $str);
         
-        // Strip trailing 'O' inserted by zero-width joiner regex artifact (e.g., dolarO -> dolar, metamaskO -> metamask)
-        $str = preg_replace('/(?<=[a-zA-Z0-9çğıöşüÇĞİÖŞÜ])O\b/iu', '', $str);
-        $str = preg_replace('/(?<=[a-zA-Z0-9çğıöşüÇĞİÖŞÜ])O(?=[a-zA-Z0-9çğıöşüÇĞİÖŞÜ])/iu', '', $str);
-        
-        // Replace '1' with 'ı' in Turkish words (e.g., doland1r1c1l11 -> dolandırıcılığı)
-        $str = preg_replace('/(?<=[a-zA-ZçğıöşüÇĞİÖŞÜ])1(?=[a-zA-ZçğıöşüÇĞİÖŞÜ1\s]|$)/u', 'ı', $str);
-
-        // Exact phrase cleanups for Meta Ads export values
-        $cleanMap = [
-            'forexo' => 'Forex',
-            'dolaro' => 'Dolar',
-            'metamasko' => 'MetaMask',
-            'trusto' => 'Trust',
-            'walleto' => 'Wallet',
-            'borsao' => 'Borsa',
-            'rugo' => 'Rug',
-            'pullo' => 'Pull',
-            'dier' => 'Diğer',
-            'hay1r' => 'Hayır',
-            'yanl1' => 'Yanlış',
-            'doland1r1c1l11' => 'Dolandırıcılığı',
-            'doland1r1c1l1' => 'Dolandırıcılığı',
-            'doland1r1c1l1' => 'Dolandırıcılığı',
-            'aras1' => 'arası',
-        ];
-
-        foreach ($cleanMap as $search => $replace) {
-            $str = str_ireplace($search, $replace, $str);
-        }
+        // Strip only UPPERCASE 'O' inserted by UTF-8 grapheme joiners (DO NOT use /i flag!)
+        $str = preg_replace('/(?<=[a-zA-Z0-9çğıöşüÇĞİÖŞÜ])O\b/u', '', $str);
+        $str = preg_replace('/(?<=[a-zA-Z0-9çğıöşüÇĞİÖŞÜ])O(?=[a-zA-Z0-9çğıöşüÇĞİÖŞÜ])/u', '', $str);
 
         return trim(preg_replace('/\s+/', ' ', str_replace('_', ' ', $str)));
     }
@@ -147,22 +120,15 @@ class ImportService
                 $phoneVal = preg_replace('/^p:/i', '', trim($phoneVal));
                 $row['normalized_phone'] = $phoneVal;
 
-                // Email Extraction
+                // Email Extraction (keep raw email string clean without modification)
                 $emailVal = null;
-                foreach ($row as $k => $v) {
-                    if (str_contains($k, 'posta') || str_contains($k, 'email') || str_contains($k, 'mail')) {
-                        $emailVal = $v;
-                        break;
-                    }
-                }
-                if (!$emailVal && isset($data[19])) {
-                    $emailVal = self::cleanMetaText($data[19]);
+                if (isset($data[19])) {
+                    $emailVal = trim($data[19]);
                 }
                 if (!$emailVal) {
                     foreach ($data as $v) {
-                        $vClean = self::cleanMetaText($v);
-                        if (str_contains($vClean, '@') && str_contains($vClean, '.')) {
-                            $emailVal = $vClean;
+                        if (str_contains($v, '@') && str_contains($v, '.')) {
+                            $emailVal = trim($v);
                             break;
                         }
                     }
