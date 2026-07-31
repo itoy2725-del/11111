@@ -22,12 +22,45 @@ class ImportService
         ];
     }
 
+    public static function cleanMetaText(?string $str): string
+    {
+        if (empty($str)) return '';
+
+        // Strip Meta Ads zero-width unicode grapheme joiners (\x{034F}), tag characters (\x{E0000}-\x{E007F}), BOM, etc.
+        $str = preg_replace('/[\x{0000}-\x{001F}\x{007F}-\x{009F}\x{0300}-\x{036F}\x{034F}\x{200B}-\x{200D}\x{FEFF}\x{E0000}-\x{E007F}]/u', '', $str);
+        
+        // Fix distorted character pattern e.g., dOoOlOaOrO -> dolar
+        $str = preg_replace('/([a-zA-Z0-9çğıöşüÇĞİÖŞÜ])O(?=[a-zA-Z0-9çğıöşüÇĞİÖŞÜ])/u', '$1', $str);
+        
+        // Normalize common Turkish typos from raw Meta exports
+        $trReplacements = [
+            'dier' => 'diğer',
+            'hay1r' => 'hayır',
+            'yanl1' => 'yanlış',
+            'fOoOrOeOxO' => 'forex',
+            'dOoOlOaOrO' => 'dolar',
+            'tOrOuOsOtO' => 'trust',
+            'wOaOlOlOeOtO' => 'wallet',
+            'mOeOtOaOmOaOsOkO' => 'metamask',
+            'bOoOrOsOaO' => 'borsa',
+            'rOuOgO' => 'rug',
+            'pOuOlOlO' => 'pull',
+            '_' => ' ',
+        ];
+
+        foreach ($trReplacements as $search => $replace) {
+            $str = str_ireplace($search, $replace, $str);
+        }
+
+        return trim(preg_replace('/\s+/', ' ', $str));
+    }
+
     public function parseCSV(string $filePath): array
     {
         $rows = [];
         if (($handle = fopen($filePath, 'r')) !== false) {
             
-            // Auto-detect delimiter
+            // Auto-detect CSV delimiter
             $firstLine = fgets($handle);
             rewind($handle);
 
@@ -44,15 +77,17 @@ class ImportService
                 return [];
             }
             
-            // Strip invisible Unicode & normalize headers
+            // Normalize headers
             $headers = array_map(function($h) {
-                $h = preg_replace('/[\x{0000}-\x{001F}\x{007F}-\x{009F}\x{200B}-\x{200D}\x{FEFF}\x{0300}-\x{036F}]/u', '', $h);
+                $h = self::cleanMetaText($h);
                 return strtolower(trim(str_replace([' ', '-'], '_', $h)));
             }, $rawHeaders);
 
             $rawRows = [];
             while (($data = fgetcsv($handle, 10000, $delimiter)) !== false) {
-                if (count($data) === 0) continue;
+                if (count($data) === 0 || (count($data) === 1 && empty($data[0]))) {
+                    continue;
+                }
                 $rawRows[] = $data;
             }
             fclose($handle);
@@ -60,15 +95,16 @@ class ImportService
             foreach ($rawRows as $data) {
                 $row = [];
                 
-                // Map by normalized header key
+                // Map by header keys
                 foreach ($data as $idx => $val) {
+                    $cleanVal = self::cleanMetaText($val);
                     if (isset($headers[$idx])) {
-                        $row[$headers[$idx]] = trim($val);
+                        $row[$headers[$idx]] = $cleanVal;
                     }
-                    $row['col_' . $idx] = trim($val);
+                    $row['col_' . $idx] = $cleanVal;
                 }
 
-                // Phone Extraction (by column keyword or index 18 or pattern)
+                // Phone Extraction (by keyword or index 18 or string pattern)
                 $phoneVal = null;
                 foreach ($row as $k => $v) {
                     if (str_contains($k, 'telefon') || str_contains($k, 'phone')) {
@@ -77,23 +113,33 @@ class ImportService
                     }
                 }
                 if (!$phoneVal && isset($data[18])) {
-                    $phoneVal = $data[18];
+                    $phoneVal = self::cleanMetaText($data[18]);
                 }
                 if (!$phoneVal) {
                     foreach ($data as $v) {
-                        if (str_contains($v, 'p:+') || str_contains($v, '+90')) {
-                            $phoneVal = $v;
+                        $vClean = self::cleanMetaText($v);
+                        if (str_contains($vClean, 'p:+') || str_contains($vClean, '+90')) {
+                            $phoneVal = $vClean;
+                            break;
+                        }
+                        $cleanDigits = preg_replace('/[^\d]/', '', $vClean);
+                        if (strlen($cleanDigits) >= 10 && (str_starts_with($cleanDigits, '90') || str_starts_with($cleanDigits, '05') || str_starts_with($cleanDigits, '5'))) {
+                            $phoneVal = $vClean;
                             break;
                         }
                     }
                 }
 
-                if ($phoneVal) {
-                    $phoneVal = preg_replace('/^p:/i', '', trim($phoneVal));
-                    $row['normalized_phone'] = $phoneVal;
+                // Filter out empty trailing/header rows without a valid phone number
+                if (!$phoneVal) {
+                    continue;
                 }
 
-                // Email Extraction (by column keyword or index 19 or pattern)
+                // Clean phone number (strip 'p:' prefix)
+                $phoneVal = preg_replace('/^p:/i', '', trim($phoneVal));
+                $row['normalized_phone'] = $phoneVal;
+
+                // Email Extraction
                 $emailVal = null;
                 foreach ($row as $k => $v) {
                     if (str_contains($k, 'posta') || str_contains($k, 'email') || str_contains($k, 'mail')) {
@@ -102,12 +148,13 @@ class ImportService
                     }
                 }
                 if (!$emailVal && isset($data[19])) {
-                    $emailVal = $data[19];
+                    $emailVal = self::cleanMetaText($data[19]);
                 }
                 if (!$emailVal) {
                     foreach ($data as $v) {
-                        if (str_contains($v, '@') && str_contains($v, '.')) {
-                            $emailVal = trim($v);
+                        $vClean = self::cleanMetaText($v);
+                        if (str_contains($vClean, '@') && str_contains($vClean, '.')) {
+                            $emailVal = $vClean;
                             break;
                         }
                     }
@@ -117,21 +164,21 @@ class ImportService
                 }
 
                 // Clean Ad Name & Campaign Name
-                $adName = $data[3] ?? $row['ad_name'] ?? '';
+                $adName = self::cleanMetaText($data[3] ?? $row['ad_name'] ?? '');
                 $adName = trim(str_replace(['"', 'ag:'], '', $adName));
                 $row['clean_ad_name'] = $adName ?: 'New Leads Ad';
 
-                $campaignName = $data[7] ?? $row['campaign_name'] ?? '';
+                $campaignName = self::cleanMetaText($data[7] ?? $row['campaign_name'] ?? '');
                 $campaignName = trim(str_replace(['"', 'c:'], '', $campaignName));
                 $row['clean_campaign_name'] = $campaignName ?: 'New Leads Campaign';
 
-                // Extract Form Questions by Index or Keyword
-                $row['form_fraud'] = $data[12] ?? $row['durumunuzu_en_iyi_hangisi_tanimliyor'] ?? '-';
-                $row['form_loss'] = $data[13] ?? $row['ne_kadar_kripto_kaybedildi'] ?? '-';
-                $row['form_wallet'] = $data[14] ?? $row['cuzdan'] ?? '-';
-                $row['form_complaint'] = $data[15] ?? $row['sikayet'] ?? '-';
-                $row['form_security'] = $data[16] ?? $row['ek_guvenlik'] ?? '-';
-                $row['form_crypto'] = $data[17] ?? $row['toplam_kripto'] ?? '-';
+                // Extract Form Answers by Index
+                $row['form_fraud'] = self::cleanMetaText($data[12] ?? $row['durumunuzu_en_iyi_hangisi_tanimliyor'] ?? '-');
+                $row['form_loss'] = self::cleanMetaText($data[13] ?? $row['ne_kadar_kripto_kaybedildi'] ?? '-');
+                $row['form_wallet'] = self::cleanMetaText($data[14] ?? $row['cuzdan'] ?? '-');
+                $row['form_complaint'] = self::cleanMetaText($data[15] ?? $row['sikayet'] ?? '-');
+                $row['form_security'] = self::cleanMetaText($data[16] ?? $row['ek_guvenlik'] ?? '-');
+                $row['form_crypto'] = self::cleanMetaText($data[17] ?? $row['toplam_kripto'] ?? '-');
 
                 // Derive Ad Soyad
                 if (!empty($row['normalized_email'])) {

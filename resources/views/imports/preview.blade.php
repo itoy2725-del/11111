@@ -104,12 +104,13 @@
                 <tbody class="divide-y divide-gray-100">
                     @forelse($previewRows as $row)
                         @php
-                            $adSoyad = $row['ad_soyad'] ?? 'Meta Lead';
-                            $phone = $row['normalized_phone'] ?? '-';
+                            $adSoyad = \App\Services\ImportService::cleanMetaText($row['ad_soyad'] ?? 'Meta Lead');
+                            $phone = preg_replace('/^p:/i', '', trim($row['normalized_phone'] ?? '-'));
                             $email = $row['normalized_email'] ?? '-';
-                            $adName = $row['clean_ad_name'] ?? 'New Leads Ad';
-                            $campaignName = $row['clean_campaign_name'] ?? 'New Leads Campaign';
+                            $adName = \App\Services\ImportService::cleanMetaText($row['clean_ad_name'] ?? 'New Leads Ad');
+                            $campaignName = \App\Services\ImportService::cleanMetaText($row['clean_campaign_name'] ?? 'New Leads Campaign');
                             $platform = strtoupper($row['col_11'] ?? $row['platform'] ?? 'FB');
+                            
                             $createdTimeVal = $row['col_1'] ?? $row['created_time'] ?? null;
                             $createdTime = '-';
                             if (!empty($createdTimeVal)) {
@@ -120,13 +121,13 @@
                                 }
                             }
                             
-                            // Form Answers pre-extracted by ImportService
-                            $fraud = $row['form_fraud'] ?? '-';
-                            $loss = $row['form_loss'] ?? '-';
-                            $wallet = $row['form_wallet'] ?? '-';
-                            $complaint = $row['form_complaint'] ?? '-';
-                            $security = $row['form_security'] ?? '-';
-                            $crypto = $row['form_crypto'] ?? '-';
+                            // Clean form answers using cleanMetaText
+                            $fraud = \App\Services\ImportService::cleanMetaText($row['form_fraud'] ?? '-');
+                            $loss = \App\Services\ImportService::cleanMetaText($row['form_loss'] ?? '-');
+                            $wallet = \App\Services\ImportService::cleanMetaText($row['form_wallet'] ?? '-');
+                            $complaint = \App\Services\ImportService::cleanMetaText($row['form_complaint'] ?? '-');
+                            $security = \App\Services\ImportService::cleanMetaText($row['form_security'] ?? '-');
+                            $crypto = \App\Services\ImportService::cleanMetaText($row['form_crypto'] ?? '-');
                         @endphp
                         <tr class="hover:bg-slate-50 transition-colors">
                             <td class="px-4 py-3 whitespace-nowrap font-bold text-gray-900">
