@@ -28,16 +28,16 @@ class ImportService
 
         $lower = strtolower($str);
 
-        if (str_contains($lower, '1000 dolardan az') || str_contains($lower, '1.000 dolardan az') || str_contains($lower, '1000 d')) {
+        if (str_contains($lower, '1000 dolardan az') || str_contains($lower, '1.000 dolardan az') || str_contains($lower, '1000 d') || str_contains($lower, '0 - 1.000')) {
             return '1k$\'dan Az';
         }
-        if (str_contains($lower, '1.000') && str_contains($lower, '10.000')) {
+        if ((str_contains($lower, '1.000') && str_contains($lower, '10.000')) || (str_contains($lower, '1.000') && str_contains($lower, '5.000')) || (str_contains($lower, '5.000') && str_contains($lower, '10.000'))) {
             return '1 - 10k$';
         }
         if (str_contains($lower, '10.000') && str_contains($lower, '50.000')) {
             return '10 - 50k$';
         }
-        if (str_contains($lower, '50.000')) {
+        if (str_contains($lower, '50.000') || str_contains($lower, '100.000')) {
             return '50k$+';
         }
 
@@ -73,13 +73,19 @@ class ImportService
 
     public function parseCSV(string $filePath): array
     {
-        // Auto-heal existing corrupted emails in MariaDB database
+        // Auto-heal existing corrupted emails & missing loss ranges in MariaDB database
         try {
             DB::statement("UPDATE leads SET email = REPLACE(email, '.cm', '.com') WHERE email LIKE '%.cm'");
             DB::statement("UPDATE leads SET email = REPLACE(email, 'htmail', 'hotmail') WHERE email LIKE '%htmail%'");
             DB::statement("UPDATE leads SET email = REPLACE(email, 'kedi vadi', 'kedi_vadi') WHERE email LIKE '%kedi vadi%'");
             DB::statement("UPDATE leads SET email = REPLACE(email, 'hasancban4801', 'hasancoban4801') WHERE email LIKE '%hasancban4801%'");
             DB::statement("UPDATE leads SET email = REPLACE(email, 'gkhanyumusak', 'gokhanyumusak') WHERE email LIKE '%gkhanyumusak%'");
+
+            // Auto-map empty loss_range_id records
+            DB::statement("UPDATE leads SET loss_range_id = 1 WHERE loss_range_id IS NULL AND (toplam_kripto LIKE '%1000%' OR sikayet_durumu LIKE '%1000%')");
+            DB::statement("UPDATE leads SET loss_range_id = 3 WHERE loss_range_id IS NULL AND (toplam_kripto LIKE '%1.000 - 10.000%' OR sikayet_durumu LIKE '%1.000 - 10.000%')");
+            DB::statement("UPDATE leads SET loss_range_id = 4 WHERE loss_range_id IS NULL AND (toplam_kripto LIKE '%10.000 - 50.000%' OR sikayet_durumu LIKE '%10.000 - 50.000%')");
+            DB::statement("UPDATE leads SET loss_range_id = 5 WHERE loss_range_id IS NULL AND (toplam_kripto LIKE '%50.000%' OR sikayet_durumu LIKE '%50.000%')");
         } catch (\Throwable $e) {}
 
         $rows = [];
@@ -156,7 +162,7 @@ class ImportService
                 $phoneVal = preg_replace('/^p:/i', '', trim($phoneVal));
                 $row['normalized_phone'] = $phoneVal;
 
-                // 100% UNTOUCHED EXACT EMAIL EXTRACTION DIRECTLY FROM RAW CSV CELL
+                // RAW Email Extraction
                 $emailVal = null;
                 foreach ($data as $v) {
                     $vRaw = trim($v);
@@ -166,7 +172,6 @@ class ImportService
                     }
                 }
                 if ($emailVal) {
-                    // Auto-correct common Meta export typos (.cm -> .com, htmail -> hotmail)
                     $emailVal = str_replace(['.cm', 'htmail'], ['.com', 'hotmail'], strtolower($emailVal));
                     $row['normalized_email'] = $emailVal;
                 }
@@ -180,7 +185,7 @@ class ImportService
                 $campaignName = trim(str_replace(['"', 'c:'], '', $campaignName));
                 $row['clean_campaign_name'] = $campaignName ?: 'New Leads Campaign';
 
-                // Extract Form Answers by Index
+                // Extract Form Answers by Index (Index 13: Kayıp Miktarı)
                 $row['form_fraud'] = self::cleanMetaText($data[12] ?? $row['durumunuzu_en_iyi_hangisi_tanimliyor'] ?? '-');
                 $row['form_loss'] = self::cleanMetaText($data[13] ?? $row['ne_kadar_kripto_kaybedildi'] ?? '-');
                 $row['form_wallet'] = self::cleanMetaText($data[14] ?? $row['cuzdan'] ?? '-');
@@ -293,10 +298,21 @@ class ImportService
                         $data['fraud_type_id'] = $fraudTypes[$fraudKey];
                     }
                     
-                    // Loss range lookup
+                    // SMART Loss Range Lookup (matches Meta CSV answers to LossRange database records)
                     $lossKey = $row['form_loss'] ?? null;
-                    if ($lossKey && isset($lossRanges[$lossKey])) {
-                        $data['loss_range_id'] = $lossRanges[$lossKey];
+                    if ($lossKey) {
+                        $lossKeyLower = strtolower($lossKey);
+                        if (str_contains($lossKeyLower, '1000 dolardan az') || str_contains($lossKeyLower, '1.000 dolardan az') || str_contains($lossKeyLower, '1000 d')) {
+                            $data['loss_range_id'] = 1; // 0 - 1.000 USD
+                        } elseif ((str_contains($lossKeyLower, '1.000') && str_contains($lossKeyLower, '10.000')) || (str_contains($lossKeyLower, '1.000') && str_contains($lossKeyLower, '5.000'))) {
+                            $data['loss_range_id'] = 2; // 1.000 - 5.000 USD
+                        } elseif (str_contains($lossKeyLower, '10.000') && str_contains($lossKeyLower, '50.000')) {
+                            $data['loss_range_id'] = 4; // 10.000 - 50.000 USD
+                        } elseif (str_contains($lossKeyLower, '50.000')) {
+                            $data['loss_range_id'] = 5; // 50.000 - 100.000 USD
+                        } elseif (isset($lossRanges[$lossKey])) {
+                            $data['loss_range_id'] = $lossRanges[$lossKey];
+                        }
                     }
                     
                     // Wallet type lookup
