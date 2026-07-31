@@ -18,6 +18,7 @@ class RoleMiddleware
             return redirect()->route('login');
         }
 
+        $user = Auth::user();
         $userRole = $user->rol ?? $user->role;
         if (!in_array($userRole, $roles)) {
             abort(403, 'Unauthorized action.');
