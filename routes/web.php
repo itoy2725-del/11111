@@ -31,6 +31,7 @@ Route::middleware('auth')->group(function () {
 
     // Shared lead routes
     Route::get('leads', [LeadController::class, 'index'])->name('leads.index');
+    Route::post('leads/bulk-assign', [LeadController::class, 'bulkAssignOperator'])->name('leads.bulk-assign');
     Route::get('leads/{id}', [LeadController::class, 'show'])->name('leads.show')->where('id', '[0-9]+');
     Route::put('leads/{id}', [LeadController::class, 'update'])->name('leads.update');
     Route::post('leads/{id}/note', [LeadController::class, 'addNote'])->name('leads.add-note');

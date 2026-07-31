@@ -3,7 +3,7 @@
 @section('title', 'Lead Yönetimi')
 
 @section('content')
-<div class="space-y-5">
+<div class="space-y-5" x-data="{ selectedLeads: [], allPageIds: [{{ $leads->pluck('id')->join(',') }}] }">
 
     <!-- Top Executive Metric KPI Cards -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -74,7 +74,7 @@
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md p-5 rounded-2xl shadow-sm border border-slate-200/80 dark:border-slate-800/80 transition-colors">
         <div>
             <h1 class="text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight">Lead Listesi & Müşteri Takibi</h1>
-            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">Sistemdeki tüm potansiyel müşterilerinizi ve form yanıtlarını ekrana tam sığacak şekilde görüntüleyin.</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">Toplu operatör ataması yapabilir veya tek tek verileri inceleyebilirsiniz.</p>
         </div>
         <div class="flex items-center space-x-3">
             <a href="{{ route('import.index') }}" class="px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white rounded-xl text-xs font-bold shadow-lg shadow-indigo-600/30 transition-all flex items-center space-x-2 active:scale-95">
@@ -83,6 +83,45 @@
             </a>
         </div>
     </div>
+
+    <!-- BULK ASSIGNMENT BAR -->
+    @if(auth()->user()->isAdmin())
+    <div x-show="selectedLeads.length > 0" class="bg-gradient-to-r from-indigo-900 to-slate-900 text-white rounded-2xl p-4 shadow-xl border border-indigo-700/80 flex flex-col md:flex-row items-center justify-between gap-4 transition-all">
+        <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-black text-sm shadow-md shrink-0">
+                <span x-text="selectedLeads.length"></span>
+            </div>
+            <div>
+                <h4 class="font-extrabold text-sm text-white">Toplu Operatör Atama Modu</h4>
+                <p class="text-xs text-indigo-200">Seçilen <span class="font-bold text-amber-300" x-text="selectedLeads.length"></span> adet lead'i bir operatöre tek tıkla aktarın.</p>
+            </div>
+        </div>
+
+        <form action="{{ route('leads.bulk-assign') }}" method="POST" class="flex flex-wrap items-center gap-3 w-full md:w-auto">
+            @csrf
+            <template x-for="id in selectedLeads" :key="id">
+                <input type="hidden" name="lead_ids[]" :value="id">
+            </template>
+            
+            <select name="operator_id" class="px-3 py-2 text-xs font-bold rounded-xl bg-slate-800 text-white border border-indigo-500/50 outline-none focus:ring-2 focus:ring-indigo-400" required>
+                <option value="">Operatör Seçin...</option>
+                @foreach($operators as $op)
+                    <option value="{{ $op->id }}">{{ $op->isim }}</option>
+                @endforeach
+            </select>
+
+            <input type="text" name="sebep" value="Toplu Operatör Ataması" class="px-3 py-2 text-xs font-medium rounded-xl bg-slate-800 text-white border border-indigo-500/50 outline-none w-44" placeholder="Atama Sebebi" required>
+
+            <button type="submit" class="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-extrabold rounded-xl text-xs shadow-lg shadow-emerald-500/30 transition-all">
+                🚀 Toplu Atamayı Başlat
+            </button>
+
+            <button type="button" @click="selectedLeads = []" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs transition-colors">
+                İptal
+            </button>
+        </form>
+    </div>
+    @endif
 
     <!-- Filters Card -->
     <div class="bg-white/90 dark:bg-slate-900/90 backdrop-blur-md rounded-2xl shadow-sm border border-slate-200/80 dark:border-slate-800/80 p-4 transition-colors">
@@ -128,21 +167,59 @@
 
     <!-- Data Table Card (FITS 100% ON SCREEN WITHOUT HORIZONTAL SCROLL) -->
     <div class="bg-white/90 dark:bg-slate-900/90 backdrop-blur-md rounded-2xl shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-200/80 dark:border-slate-800/80 overflow-hidden transition-colors">
-        <div class="px-5 py-3 border-b border-slate-200/80 dark:border-slate-800/80 bg-slate-50/80 dark:bg-slate-950/80 flex justify-between items-center">
-            <h3 class="font-black text-slate-800 dark:text-slate-100 text-xs flex items-center space-x-2">
-                <span>📋 Lead Verileri & Form Yanıtları</span>
-                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300">
-                    {{ $leads->total() }} Kayıt
-                </span>
-            </h3>
-            <span class="text-[11px] text-slate-500 dark:text-slate-400 font-bold">Sayfa {{ $leads->currentPage() }} / {{ $leads->lastPage() }}</span>
+        <div class="px-5 py-3 border-b border-slate-200/80 dark:border-slate-800/80 bg-slate-50/80 dark:bg-slate-950/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="flex items-center space-x-3">
+                <h3 class="font-black text-slate-800 dark:text-slate-100 text-xs flex items-center space-x-2">
+                    <span>📋 Lead Verileri & Form Yanıtları</span>
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300">
+                        {{ $leads->total() }} Kayıt
+                    </span>
+                </h3>
+            </div>
+            
+            <div class="flex items-center space-x-2">
+                @if(auth()->user()->isAdmin())
+                <button 
+                    type="button" 
+                    @click="
+                        if (selectedLeads.length === allPageIds.length) {
+                            selectedLeads = [];
+                        } else {
+                            selectedLeads = [...allPageIds];
+                        }
+                    " 
+                    class="px-3 py-1.5 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded-xl text-[11px] font-extrabold transition-all border border-indigo-200/60 dark:border-indigo-800/60 shadow-sm flex items-center space-x-1"
+                >
+                    <span x-text="selectedLeads.length === allPageIds.length ? '✓ Sayfadaki 25 Seçimi Kaldır' : '⚡ Sayfadaki 25 Lead\'in Tümünü Seç'"></span>
+                </button>
+                @endif
+                <span class="text-[11px] text-slate-500 dark:text-slate-400 font-bold">Sayfa {{ $leads->currentPage() }} / {{ $leads->lastPage() }}</span>
+            </div>
         </div>
         
         <div class="w-full overflow-hidden">
             <table class="w-full text-[11px] text-left text-slate-600 dark:text-slate-300">
                 <thead class="text-[10px] text-slate-400 dark:text-slate-400 uppercase bg-slate-100/70 dark:bg-slate-900/70 font-extrabold border-b border-slate-200/80 dark:border-slate-800/80 tracking-wider">
                     <tr>
-                        <th class="px-3 py-2.5">Ad Soyad / İletişim</th>
+                        @if(auth()->user()->isAdmin())
+                        <th class="px-3 py-2.5 w-8">
+                            <input 
+                                type="checkbox" 
+                                @change="
+                                    if ($event.target.checked) {
+                                        selectedLeads = [...allPageIds];
+                                    } else {
+                                        selectedLeads = [];
+                                    }
+                                "
+                                :checked="selectedLeads.length > 0 && selectedLeads.length === allPageIds.length"
+                                class="rounded border-slate-300 dark:border-slate-700 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                                title="25 Lead'in Tümünü Seç"
+                            >
+                        </th>
+                        @endif
+                        <th class="px-3 py-2.5">Müşteri</th>
+                        <th class="px-3 py-2.5">İletişim Bilgileri</th>
                         <th class="px-2 py-2.5">Durum</th>
                         <th class="px-2 py-2.5">Operatör</th>
                         <th class="px-2 py-2.5">Dolandırıcılık Türü</th>
@@ -166,28 +243,49 @@
                             $security = \App\Services\ImportService::cleanMetaText($lead->ek_guvenlik_hizmeti ?: 'Evet');
                             $crypto = \App\Services\ImportService::formatCryptoAmount($lead->toplam_kripto ?: $lossRaw);
                         @endphp
-                        <tr class="hover:bg-indigo-50/40 dark:hover:bg-indigo-950/20 transition-all duration-150">
-                            <!-- Ad Soyad & Telefon & Email -->
+                        <tr class="hover:bg-indigo-50/40 dark:hover:bg-indigo-950/20 transition-all duration-150" :class="selectedLeads.includes({{ $lead->id }}) ? 'bg-indigo-50/70 dark:bg-indigo-950/40 font-semibold' : ''">
+                            @if(auth()->user()->isAdmin())
                             <td class="px-3 py-2.5">
-                                <div class="flex items-center space-x-2.5">
-                                    <div class="w-7 h-7 rounded-xl bg-gradient-to-tr from-indigo-500 to-violet-500 text-white font-black flex items-center justify-center text-[11px] shadow-sm shrink-0">
+                                <input 
+                                    type="checkbox" 
+                                    value="{{ $lead->id }}" 
+                                    x-model.number="selectedLeads" 
+                                    class="rounded border-slate-300 dark:border-slate-700 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                                >
+                            </td>
+                            @endif
+
+                            <!-- Müşteri Ad Soyad & ID -->
+                            <td class="px-3 py-2.5">
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-7 h-7 rounded-xl bg-gradient-to-tr from-indigo-500 to-violet-500 text-white font-black flex items-center justify-center text-xs shadow-sm shrink-0">
                                         {{ mb_substr($lead->ad_soyad ?? 'M', 0, 1) }}
                                     </div>
-                                    <div class="min-w-0">
-                                        <a href="{{ route('leads.show', $lead->id) }}" class="font-extrabold text-slate-900 dark:text-slate-100 hover:text-indigo-600 dark:hover:text-indigo-400 block truncate">
+                                    <div>
+                                        <a href="{{ route('leads.show', $lead->id) }}" class="font-black text-slate-900 dark:text-slate-100 hover:text-indigo-600 dark:hover:text-indigo-400 block truncate">
                                             {{ $lead->ad_soyad ?? 'İsimsiz Lead' }}
                                         </a>
-                                        <div class="flex items-center space-x-2 text-[10px] text-slate-500 dark:text-slate-400">
-                                            <span class="font-mono font-bold select-all text-slate-800 dark:text-slate-200">{{ $lead->telefon }}</span>
-                                            @if($lead->email)
-                                                <span>•</span>
-                                                <span class="truncate max-w-[110px] inline-block font-medium" title="{{ $lead->email }}">{{ $lead->email }}</span>
-                                            @endif
-                                        </div>
+                                        <span class="text-[10px] text-slate-400 font-mono">#{{ $lead->id }}</span>
                                     </div>
                                 </div>
                             </td>
                             
+                            <!-- İletişim Bilgileri (Telefon & Tam E-posta Adresi) -->
+                            <td class="px-3 py-2.5 min-w-[170px]">
+                                <div class="space-y-0.5">
+                                    <div class="flex items-center space-x-1 text-slate-900 dark:text-slate-100 font-mono font-bold">
+                                        <span>📞</span>
+                                        <span class="select-all">{{ $lead->telefon }}</span>
+                                    </div>
+                                    @if($lead->email)
+                                        <div class="flex items-center space-x-1 text-[10px] text-slate-600 dark:text-slate-300 font-semibold">
+                                            <span>✉️</span>
+                                            <span class="select-all font-mono break-all leading-tight">{{ $lead->email }}</span>
+                                        </div>
+                                    @endif
+                                </div>
+                            </td>
+
                             <!-- Durum (Selectable) -->
                             <td class="px-2 py-2.5">
                                 <form action="{{ route('leads.update', $lead->id) }}" method="POST" class="inline-block">
@@ -271,7 +369,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="10" class="px-6 py-12 text-center text-slate-400">
+                            <td colspan="12" class="px-6 py-12 text-center text-slate-400">
                                 <div class="max-w-xs mx-auto text-center space-y-2">
                                     <p class="text-3xl">📭</p>
                                     <p class="font-bold text-slate-700 dark:text-slate-200 text-base">Kayıtlı Lead Bulunamadı</p>
