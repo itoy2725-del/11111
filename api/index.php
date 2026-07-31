@@ -70,8 +70,9 @@ try {
     $app = require __DIR__ . '/../bootstrap/app.php';
 
     $request = \Illuminate\Http\Request::capture();
-    $response = $app->handleRequest($request);
-    $response->send();
+    
+    // In Laravel 12, handleRequest() handles and sends the response internally
+    $app->handleRequest($request);
 
 } catch (\Throwable $e) {
     if (!headers_sent()) {
