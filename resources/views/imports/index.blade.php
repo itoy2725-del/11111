@@ -8,7 +8,7 @@
     <div class="card p-6">
         <h2 class="text-lg font-semibold text-gray-900 mb-4">Meta Lead CSV Yükle</h2>
         
-        <form action="{{ route('imports.store') ?? '#' }}" method="POST" enctype="multipart/form-data" class="space-y-4">
+        <form action="{{ route('import.upload') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
             @csrf
             <div class="flex items-center justify-center w-full">
                 <label for="dropzone-file" class="flex flex-col items-center justify-center w-full h-64 border-2 border-indigo-300 border-dashed rounded-lg cursor-pointer bg-indigo-50 hover:bg-indigo-100 transition-colors">
@@ -17,7 +17,7 @@
                         <p class="mb-2 text-sm text-gray-700"><span class="font-semibold">Yüklemek için tıklayın</span> veya sürükleyip bırakın</p>
                         <p class="text-xs text-gray-500">Sadece CSV dosyaları</p>
                     </div>
-                    <input id="dropzone-file" type="file" name="csv_file" class="hidden" accept=".csv" />
+                    <input id="dropzone-file" type="file" name="csv_file" class="hidden" accept=".csv" required />
                 </label>
             </div>
             <div class="flex justify-end">
@@ -38,25 +38,36 @@
                         <th class="px-6 py-3">Tarih</th>
                         <th class="px-6 py-3">Dosya Adı</th>
                         <th class="px-6 py-3">Toplam</th>
-                        <th class="px-6 py-3">Yeni</th>
+                        <th class="px-6 py-3">Başarılı</th>
                         <th class="px-6 py-3">Mükerrer</th>
                         <th class="px-6 py-3">Hatalı</th>
                         <th class="px-6 py-3">Yükleyen</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr class="bg-white border-b hover:bg-gray-50">
-                        <td class="px-6 py-4">24 Eki 2023 10:30</td>
-                        <td class="px-6 py-4 font-medium text-gray-900">meta_leads_oct.csv</td>
-                        <td class="px-6 py-4">150</td>
-                        <td class="px-6 py-4 text-green-600">142</td>
-                        <td class="px-6 py-4 text-yellow-600">5</td>
-                        <td class="px-6 py-4 text-red-600">3</td>
-                        <td class="px-6 py-4">Admin User</td>
-                    </tr>
+                    @forelse($imports as $import)
+                        <tr class="bg-white border-b hover:bg-gray-50">
+                            <td class="px-6 py-4">{{ $import->created_at->format('d M Y H:i') }}</td>
+                            <td class="px-6 py-4 font-medium text-gray-900">{{ $import->dosya_adi }}</td>
+                            <td class="px-6 py-4">{{ $import->toplam_kayit }}</td>
+                            <td class="px-6 py-4 text-green-600">{{ $import->basarili }}</td>
+                            <td class="px-6 py-4 text-yellow-600">{{ $import->mukerrer }}</td>
+                            <td class="px-6 py-4 text-red-600">{{ $import->hata_sayisi }}</td>
+                            <td class="px-6 py-4">{{ $import->user->isim ?? 'Sistem' }}</td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="7" class="px-6 py-4 text-center text-gray-500">Henüz yapılmış bir aktarım bulunmuyor.</td>
+                        </tr>
+                    @endforelse
                 </tbody>
             </table>
         </div>
+        @if($imports->hasPages())
+            <div class="p-4 border-t border-gray-100">
+                {{ $imports->links() }}
+            </div>
+        @endif
     </div>
 </div>
 @endsection
