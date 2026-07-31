@@ -37,7 +37,7 @@ class ImportService
             $headers = array_map(function($h) {
                 $h = preg_replace('/\x{FEFF}/u', '', $h);
                 return strtolower(trim(str_replace([' ', '-'], '_', $h)));
-            }, $headers);
+            }, $rawHeaders);
 
             // Intelligent phone column detection
             $phoneHeader = null;
