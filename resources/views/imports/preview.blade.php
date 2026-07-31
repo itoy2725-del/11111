@@ -78,46 +78,89 @@
         </form>
     </div>
 
-    <!-- Preview Table -->
+    <!-- Clean Dynamic Preview Table (Stripped Technical IDs) -->
     <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-200 bg-slate-50">
-            <h3 class="font-bold text-gray-800">Örnek Veri (Önizleme - İlk 10 Satır)</h3>
+        <div class="px-6 py-4 border-b border-gray-200 bg-slate-50 flex justify-between items-center">
+            <h3 class="font-bold text-gray-800">Lead Detay Verileri Önizleme (Temizlenmiş Kolonlar)</h3>
+            <span class="text-xs bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full font-semibold">Teknik ID'ler Kaldırıldı</span>
         </div>
         <div class="overflow-x-auto">
-            <table class="w-full text-sm text-left text-gray-600">
-                <thead class="text-xs text-gray-500 uppercase bg-slate-50 font-semibold border-b border-gray-200">
+            <table class="w-full text-xs text-left text-gray-600">
+                <thead class="text-[11px] text-gray-500 uppercase bg-slate-100 font-bold border-b border-gray-200">
                     <tr>
-                        <th class="px-6 py-3">Ad Soyad / ID</th>
-                        <th class="px-6 py-3">Telefon</th>
-                        <th class="px-6 py-3">Email</th>
-                        <th class="px-6 py-3">Kampanya</th>
-                        <th class="px-6 py-3 text-center">Durum</th>
+                        <th class="px-4 py-3 whitespace-nowrap">Tarih / Platform</th>
+                        <th class="px-4 py-3 whitespace-nowrap">Telefon</th>
+                        <th class="px-4 py-3 whitespace-nowrap">E-posta</th>
+                        <th class="px-4 py-3 whitespace-nowrap">Reklam / Kampanya</th>
+                        <th class="px-4 py-3 whitespace-nowrap">Dolandırıcılık Türü</th>
+                        <th class="px-4 py-3 whitespace-nowrap">Kayıp Miktarı</th>
+                        <th class="px-4 py-3 whitespace-nowrap">Cüzdan Türü</th>
+                        <th class="px-4 py-3 whitespace-nowrap">Polise Şikayet</th>
+                        <th class="px-4 py-3 whitespace-nowrap">Ek Güvenlik</th>
+                        <th class="px-4 py-3 whitespace-nowrap">Mevcut Kripto</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
                     @forelse($previewRows as $row)
+                        @php
+                            $phone = $row['normalized_phone'] ?? '-';
+                            $email = $row['normalized_email'] ?? '-';
+                            $adName = trim(str_replace('"', '', $row['ad_name'] ?? ''));
+                            $campaignName = trim(str_replace('"', '', $row['campaign_name'] ?? ''));
+                            $platform = strtoupper($row['platform'] ?? 'FB');
+                            $createdTime = isset($row['created_time']) ? \Carbon\Carbon::parse($row['created_time'])->format('d.m.Y H:i') : '-';
+                            
+                            // Extract form answers
+                            $fraud = $row['durumunuz_en_iyisi_hangisi_tanımlıyor'] ?? $row['durumunuzu_en_iyi_hangisi_tanımlıyor'] ?? '-';
+                            $loss = $row['ne_kadar_kripto_kaybedildi'] ?? '-';
+                            $wallet = $row['fonlarınızı_göndermek_için_kullandığınız_cüzdanı_seçin'] ?? '-';
+                            $complaint = $row['polise_siber_suç_yetkililerine_veya_mali_düzenleyicilere_bir_ihbar_şikayet_yaptınız_mı'] ?? '-';
+                            $security = $row['gelecekteki_kayıpları_önlemek_icin_ek_güvenlik_hizmetleriyle_ilgilenir_misiniz'] ?? '-';
+                            $crypto = $row['tüm_cüzdanlarınızda_şu_andan_ne_kadar_kriptonuz_bulunuyor'] ?? '-';
+                        @endphp
                         <tr class="hover:bg-slate-50 transition-colors">
-                            <td class="px-6 py-4 font-medium text-gray-900">
-                                {{ $row['ad_soyad'] ?? $row['full_name'] ?? $row['id'] ?? 'Meta Lead' }}
+                            <td class="px-4 py-3 whitespace-nowrap">
+                                <span class="font-bold text-gray-900 block">{{ $createdTime }}</span>
+                                <span class="inline-block px-1.5 py-0.5 text-[10px] font-bold rounded bg-indigo-50 text-indigo-700 border border-indigo-100 mt-0.5">{{ $platform }}</span>
                             </td>
-                            <td class="px-6 py-4 font-mono font-bold text-indigo-600">
-                                {{ $row['normalized_phone'] ?? '-' }}
+                            <td class="px-4 py-3 whitespace-nowrap font-mono font-bold text-indigo-600">
+                                {{ $phone }}
                             </td>
-                            <td class="px-6 py-4">
-                                {{ $row['normalized_email'] ?? '-' }}
+                            <td class="px-4 py-3 whitespace-nowrap">
+                                {{ $email }}
                             </td>
-                            <td class="px-6 py-4 text-xs font-semibold text-gray-600">
-                                {{ $row['campaign_name'] ?? '-' }}
+                            <td class="px-4 py-3">
+                                <span class="font-semibold text-gray-800 block whitespace-nowrap">{{ $adName ?: 'Meta Lead Ad' }}</span>
+                                <span class="text-gray-500 text-[11px] block whitespace-nowrap">{{ $campaignName ?: 'Genel Kampanya' }}</span>
                             </td>
-                            <td class="px-6 py-4 text-center">
-                                <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
-                                    Hazır
+                            <td class="px-4 py-3 whitespace-nowrap">
+                                <span class="px-2 py-0.5 rounded text-[11px] font-medium bg-red-50 text-red-700 border border-red-100">
+                                    {{ str_replace('_', ' ', $fraud) }}
                                 </span>
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap font-bold text-gray-800">
+                                {{ str_replace('_', ' ', $loss) }}
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap text-gray-700">
+                                {{ str_replace('_', ' ', $wallet) }}
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap">
+                                <span class="px-2 py-0.5 rounded text-[11px] font-bold {{ strtolower($complaint) === 'evet' ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-600' }}">
+                                    {{ ucfirst($complaint) }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap">
+                                <span class="px-2 py-0.5 rounded text-[11px] font-bold {{ strtolower($security) === 'evet' ? 'bg-blue-50 text-blue-700' : 'bg-gray-100 text-gray-600' }}">
+                                    {{ ucfirst($security) }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap font-medium text-gray-700">
+                                {{ str_replace('_', ' ', $crypto) }}
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="px-6 py-4 text-center text-gray-500">Önizleme satırı bulunmuyor.</td>
+                            <td colspan="10" class="px-6 py-4 text-center text-gray-500">Önizleme satırı bulunmuyor.</td>
                         </tr>
                     @endforelse
                 </tbody>
