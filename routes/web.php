@@ -48,6 +48,7 @@ Route::middleware('auth')->group(function () {
 
         Route::prefix('import')->name('import.')->group(function () {
             Route::get('/', [ImportController::class, 'index'])->name('index');
+            Route::get('upload', function() { return redirect()->route('import.index'); });
             Route::post('upload', [ImportController::class, 'upload'])->name('upload');
             Route::get('preview', [ImportController::class, 'preview'])->name('preview');
             Route::post('process', [ImportController::class, 'process'])->name('process');
