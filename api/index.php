@@ -51,6 +51,11 @@ $_ENV['SESSION_DRIVER'] = "cookie";
 putenv("CACHE_STORE=array");
 $_ENV['CACHE_STORE'] = "array";
 
+if (!getenv('APP_KEY')) {
+    putenv("APP_KEY=base64:d1Bsd2lKUk51RGRYVTFmWTd1RjRtWjlnTzRZNFlqT0E=");
+    $_ENV['APP_KEY'] = "base64:d1Bsd2lKUk51RGRYVTFmWTd1RjRtWjlnTzRZNFlqT0E=";
+}
+
 putenv("APP_DEBUG=true");
 $_ENV['APP_DEBUG'] = "true";
 

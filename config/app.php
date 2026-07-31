@@ -18,7 +18,7 @@ return [
 
     'faker_locale' => 'tr_TR',
 
-    'key' => env('APP_KEY', 'base64:c3VwZXJzZWNyZXRjcjJzaWJlcmd1dmVubGlrY3Jta2V5'),
+    'key' => env('APP_KEY', 'base64:d1Bsd2lKUk51RGRYVTFmWTd1RjRtWjlnTzRZNFlqT0E='),
 
     'cipher' => 'AES-256-CBC',
 
