@@ -313,12 +313,19 @@ class ImportService
 
                     // Wallet Type Lookup
                     $walletName = $row['form_wallet'] ?? 'Diğer';
-                    if (str_contains(strtolower($walletName), 'metamask')) {
-                        $data['wallet_type_id'] = 1;
-                    } elseif (str_contains(strtolower($walletName), 'trust')) {
-                        $data['wallet_type_id'] = 2;
+                    $walletLower = strtolower($walletName);
+                    if (str_contains($walletLower, 'metamask')) {
+                        $data['wallet_type_id'] = 1; // MetaMask
+                    } elseif (str_contains($walletLower, 'trust')) {
+                        $data['wallet_type_id'] = 2; // Trust Wallet
+                    } elseif (str_contains($walletLower, 'binance')) {
+                        $data['wallet_type_id'] = 3; // Binance
+                    } elseif (str_contains($walletLower, 'coinbase')) {
+                        $data['wallet_type_id'] = 4; // Coinbase
+                    } elseif (str_contains($walletLower, 'ledger')) {
+                        $data['wallet_type_id'] = 5; // Ledger
                     } else {
-                        $data['wallet_type_id'] = 3;
+                        $data['wallet_type_id'] = 6; // Diğer
                     }
 
                     $existing = Lead::where('telefon', $phone)->first();

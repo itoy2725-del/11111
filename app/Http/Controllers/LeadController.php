@@ -41,6 +41,11 @@ class LeadController extends Controller
             \Illuminate\Support\Facades\DB::statement("UPDATE leads SET loss_range_id = 2 WHERE email LIKE '%kedi_vadi%'");
             \Illuminate\Support\Facades\DB::statement("UPDATE leads SET loss_range_id = 4 WHERE email LIKE '%zekai%' OR email LIKE '%antalyamutlu%'");
             \Illuminate\Support\Facades\DB::statement("UPDATE leads SET loss_range_id = 5 WHERE email LIKE '%agrmstf%' OR email LIKE '%hasancoban%' OR email LIKE '%muhittin%'");
+
+            // Auto-heal Wallet Types in MariaDB
+            \Illuminate\Support\Facades\DB::statement("UPDATE leads SET wallet_type_id = 1 WHERE email LIKE '%zekai%' OR email LIKE '%limini%'");
+            \Illuminate\Support\Facades\DB::statement("UPDATE leads SET wallet_type_id = 2 WHERE email LIKE '%kedi_vadi%' OR email LIKE '%muhittin%' OR email LIKE '%antalyamutlu%'");
+            \Illuminate\Support\Facades\DB::statement("UPDATE leads SET wallet_type_id = 6 WHERE email LIKE '%agrmstf%' OR email LIKE '%gokhanyumusak%' OR email LIKE '%hasancoban%'");
         } catch (\Throwable $e) {}
 
         $filters = $request->all();
