@@ -10,6 +10,10 @@ use App\Http\Controllers\OperatorController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\SettingController;
+use App\Http\Controllers\DbCheckController;
+
+// Public DB Diagnostic Route
+Route::get('check-db', [DbCheckController::class, 'index'])->name('check-db');
 
 // Guest Routes
 Route::middleware('guest')->group(function () {
