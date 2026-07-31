@@ -1,107 +1,136 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="tr" x-data="{ darkMode: localStorage.getItem('theme') === 'dark' }" x-init="$watch('darkMode', val => localStorage.setItem('theme', val ? 'dark' : 'light'))" :class="{ 'dark': darkMode }">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'CRM') - CRM</title>
+    <title>@yield('title', 'CRM') - Siber CRM Pro</title>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <style>
+        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+    </style>
 </head>
-<body class="font-sans antialiased text-gray-900 bg-slate-50" x-data>
+<body class="font-sans antialiased text-slate-900 bg-slate-100 dark:bg-slate-950 dark:text-slate-100 transition-colors duration-200" x-data>
 
     <div class="flex h-screen overflow-hidden">
         
         <!-- Sidebar -->
         <aside 
-            class="flex flex-col bg-indigo-900 text-white transition-all duration-300 ease-in-out z-20"
+            class="flex flex-col bg-slate-900 dark:bg-slate-950 text-slate-200 border-r border-slate-800 transition-all duration-300 ease-in-out z-20 shrink-0"
             :class="$store.sidebar.collapsed ? 'w-16' : 'w-64'"
         >
-            <div class="flex items-center justify-between h-16 px-4 border-b border-indigo-800">
-                <span class="font-bold text-lg whitespace-nowrap overflow-hidden transition-opacity" :class="$store.sidebar.collapsed ? 'opacity-0 w-0' : 'opacity-100'">
-                    CRM
-                </span>
-                <button @click="$store.sidebar.toggle()" class="p-1 rounded-md hover:bg-indigo-800 focus:outline-none">
-                    <svg class="w-5 h-5 text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="flex items-center justify-between h-16 px-4 border-b border-slate-800">
+                <div class="flex items-center space-x-3 overflow-hidden">
+                    <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 text-white font-black flex items-center justify-center text-sm shadow-md shrink-0">
+                        S
+                    </div>
+                    <span class="font-black text-base text-white tracking-wider whitespace-nowrap overflow-hidden transition-opacity" :class="$store.sidebar.collapsed ? 'opacity-0 w-0' : 'opacity-100'">
+                        SİBER CRM
+                    </span>
+                </div>
+                <button @click="$store.sidebar.toggle()" class="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition-colors focus:outline-none">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                     </svg>
                 </button>
             </div>
             
-            <nav class="flex-1 px-2 py-4 space-y-1 overflow-y-auto custom-scrollbar">
+            <nav class="flex-1 px-3 py-4 space-y-1.5 overflow-y-auto custom-scrollbar">
                 @php
                     $role = auth()->user()->rol ?? 'operator'; 
                 @endphp
                 
-                @if($role === 'super_admin')
-                    <a href="{{ route('dashboard') }}" class="flex items-center px-2 py-2 text-sm font-medium rounded-md hover:bg-indigo-800 {{ request()->routeIs('dashboard') ? 'bg-indigo-800' : '' }}" title="Dashboard">
+                @if(auth()->user()->isAdmin())
+                    <a href="{{ route('dashboard') }}" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-xl transition-all {{ request()->routeIs('dashboard') ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}" title="Dashboard">
                         <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
                         <span class="ml-3 transition-opacity" :class="$store.sidebar.collapsed ? 'hidden' : 'block'">Dashboard</span>
                     </a>
-                    <a href="{{ route('leads.index') }}" class="flex items-center px-2 py-2 text-sm font-medium rounded-md hover:bg-indigo-800 {{ request()->routeIs('leads.*') ? 'bg-indigo-800' : '' }}" title="Leadler">
+                    <a href="{{ route('leads.index') }}" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-xl transition-all {{ request()->routeIs('leads.*') ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}" title="Leadler">
                         <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
                         <span class="ml-3 transition-opacity" :class="$store.sidebar.collapsed ? 'hidden' : 'block'">Leadler</span>
                     </a>
-                    <a href="{{ route('import.index') }}" class="flex items-center px-2 py-2 text-sm font-medium rounded-md hover:bg-indigo-800 {{ request()->routeIs('import.*') ? 'bg-indigo-800' : '' }}" title="CSV İçe Aktarma">
+                    <a href="{{ route('import.index') }}" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-xl transition-all {{ request()->routeIs('import.*') ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}" title="CSV İçe Aktarma">
                         <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
                         <span class="ml-3 transition-opacity" :class="$store.sidebar.collapsed ? 'hidden' : 'block'">İçe Aktar</span>
                     </a>
-                    <a href="{{ route('tasks.index') }}" class="flex items-center px-2 py-2 text-sm font-medium rounded-md hover:bg-indigo-800 {{ request()->routeIs('tasks.*') ? 'bg-indigo-800' : '' }}" title="Görevler">
+                    <a href="{{ route('tasks.index') }}" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-xl transition-all {{ request()->routeIs('tasks.*') ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}" title="Görevler">
                         <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
                         <span class="ml-3 transition-opacity" :class="$store.sidebar.collapsed ? 'hidden' : 'block'">Görevler</span>
                     </a>
-                    <a href="{{ route('operators.index') }}" class="flex items-center px-2 py-2 text-sm font-medium rounded-md hover:bg-indigo-800 {{ request()->routeIs('operators.*') ? 'bg-indigo-800' : '' }}" title="Operatörler">
+                    <a href="{{ route('operators.index') }}" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-xl transition-all {{ request()->routeIs('operators.*') ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}" title="Operatörler">
                         <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
                         <span class="ml-3 transition-opacity" :class="$store.sidebar.collapsed ? 'hidden' : 'block'">Operatörler</span>
                     </a>
-                    <a href="{{ route('reports.index') }}" class="flex items-center px-2 py-2 text-sm font-medium rounded-md hover:bg-indigo-800 {{ request()->routeIs('reports.*') ? 'bg-indigo-800' : '' }}" title="Raporlar">
+                    <a href="{{ route('reports.index') }}" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-xl transition-all {{ request()->routeIs('reports.*') ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}" title="Raporlar">
                         <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"/></svg>
                         <span class="ml-3 transition-opacity" :class="$store.sidebar.collapsed ? 'hidden' : 'block'">Raporlar</span>
                     </a>
-                    <a href="{{ route('audit-logs.index') }}" class="flex items-center px-2 py-2 text-sm font-medium rounded-md hover:bg-indigo-800 {{ request()->routeIs('audit-logs.*') ? 'bg-indigo-800' : '' }}" title="Audit Log">
+                    <a href="{{ route('audit-logs.index') }}" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-xl transition-all {{ request()->routeIs('audit-logs.*') ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}" title="Audit Log">
                         <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
                         <span class="ml-3 transition-opacity" :class="$store.sidebar.collapsed ? 'hidden' : 'block'">Audit Log</span>
                     </a>
-                    <a href="{{ route('settings.index') }}" class="flex items-center px-2 py-2 text-sm font-medium rounded-md hover:bg-indigo-800 {{ request()->routeIs('settings.*') ? 'bg-indigo-800' : '' }}" title="Ayarlar">
-                        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                        <span class="ml-3 transition-opacity" :class="$store.sidebar.collapsed ? 'hidden' : 'block'">Ayarlar</span>
-                    </a>
                 @else
-                    <a href="{{ route('dashboard') }}" class="flex items-center px-2 py-2 text-sm font-medium rounded-md hover:bg-indigo-800 {{ request()->routeIs('dashboard') ? 'bg-indigo-800' : '' }}" title="Bugün Yapılacaklar">
+                    <a href="{{ route('dashboard') }}" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-xl transition-all {{ request()->routeIs('dashboard') ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}" title="Bugün Yapılacaklar">
                         <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                         <span class="ml-3 transition-opacity" :class="$store.sidebar.collapsed ? 'hidden' : 'block'">Bugün</span>
                     </a>
-                    <a href="{{ route('leads.index') }}" class="flex items-center px-2 py-2 text-sm font-medium rounded-md hover:bg-indigo-800 {{ request()->routeIs('leads.*') ? 'bg-indigo-800' : '' }}" title="Leadlerim">
+                    <a href="{{ route('leads.index') }}" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-xl transition-all {{ request()->routeIs('leads.*') ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}" title="Leadlerim">
                         <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
                         <span class="ml-3 transition-opacity" :class="$store.sidebar.collapsed ? 'hidden' : 'block'">Leadlerim</span>
                     </a>
-                    <a href="{{ route('tasks.index') }}" class="flex items-center px-2 py-2 text-sm font-medium rounded-md hover:bg-indigo-800 {{ request()->routeIs('tasks.*') ? 'bg-indigo-800' : '' }}" title="Görevlerim">
+                    <a href="{{ route('tasks.index') }}" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-xl transition-all {{ request()->routeIs('tasks.*') ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}" title="Görevlerim">
                         <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
                         <span class="ml-3 transition-opacity" :class="$store.sidebar.collapsed ? 'hidden' : 'block'">Görevlerim</span>
-                    </a>
-                    <a href="{{ route('profile') }}" class="flex items-center px-2 py-2 text-sm font-medium rounded-md hover:bg-indigo-800 {{ request()->routeIs('profile') ? 'bg-indigo-800' : '' }}" title="Profil">
-                        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-                        <span class="ml-3 transition-opacity" :class="$store.sidebar.collapsed ? 'hidden' : 'block'">Profil</span>
                     </a>
                 @endif
             </nav>
         </aside>
 
         <!-- Main Content -->
-        <main class="flex-1 flex flex-col h-screen overflow-hidden bg-slate-50">
+        <main class="flex-1 flex flex-col h-screen overflow-hidden bg-slate-100 dark:bg-slate-950">
             <!-- Header -->
-            <header class="bg-white border-b border-gray-200 h-16 flex items-center justify-between px-6 z-10 shrink-0">
-                <h1 class="text-xl font-semibold text-gray-800">@yield('title')</h1>
+            <header class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 h-16 flex items-center justify-between px-6 z-10 shrink-0 shadow-sm transition-colors duration-200">
+                <h1 class="text-lg font-bold text-slate-800 dark:text-slate-100">@yield('title')</h1>
+                
                 <div class="flex items-center space-x-4">
-                    <span class="text-sm text-gray-600 font-medium">{{ auth()->user()->isim ?? 'Kullanıcı' }}</span>
-                    <span class="px-2.5 py-0.5 text-xs font-semibold rounded-full {{ $role === 'super_admin' ? 'bg-indigo-100 text-indigo-800' : 'bg-green-100 text-green-800' }}">
-                        {{ $role === 'super_admin' ? 'Admin' : 'Operatör' }}
-                    </span>
-                    <form method="POST" action="{{ route('logout') }}" class="inline">
-                        @csrf
-                        <button type="submit" class="text-sm text-gray-500 hover:text-gray-700 ml-4">
-                            Çıkış Yap
-                        </button>
-                    </form>
+                    <!-- Day / Night Dark Mode Switcher -->
+                    <button 
+                        @click="darkMode = !darkMode" 
+                        class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-amber-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors focus:outline-none flex items-center space-x-2"
+                        title="Gece / Gündüz Modu Değiştir"
+                    >
+                        <span x-show="!darkMode" class="flex items-center space-x-1.5 text-xs font-bold text-slate-700">
+                            <span>🌙 Gece Modu</span>
+                        </span>
+                        <span x-show="darkMode" class="flex items-center space-x-1.5 text-xs font-bold text-amber-400" style="display: none;">
+                            <span>☀️ Gündüz Modu</span>
+                        </span>
+                    </button>
+
+                    <div class="h-5 w-px bg-slate-200 dark:bg-slate-800"></div>
+
+                    <!-- User Profile & Logout -->
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 rounded-full bg-slate-900 dark:bg-indigo-600 text-white font-bold text-xs flex items-center justify-center">
+                            {{ mb_substr(auth()->user()->isim ?? 'K', 0, 1) }}
+                        </div>
+                        <div class="hidden sm:block">
+                            <span class="text-xs font-bold text-slate-800 dark:text-slate-100 block leading-tight">{{ auth()->user()->isim ?? 'Kullanıcı' }}</span>
+                            <span class="text-[10px] text-slate-500 dark:text-slate-400 block uppercase font-semibold">
+                                {{ auth()->user()->isAdmin() ? 'Sistem Yöneticisi' : 'Operatör' }}
+                            </span>
+                        </div>
+                        <form method="POST" action="{{ route('logout') }}" class="inline">
+                            @csrf
+                            <button type="submit" class="p-2 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors text-xs font-bold" title="Çıkış Yap">
+                                🚪 Çıkış
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </header>
 
@@ -110,8 +139,8 @@
                 @yield('content')
             </div>
             
-            <footer class="bg-white border-t border-gray-200 p-4 text-center text-sm text-gray-500 shrink-0">
-                &copy; {{ date('Y') }} CRM. Tüm hakları saklıdır.
+            <footer class="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 p-4 text-center text-xs font-semibold text-slate-400 shrink-0">
+                &copy; {{ date('Y') }} Siber CRM. Tüm hakları saklıdır.
             </footer>
         </main>
     </div>
@@ -119,7 +148,6 @@
     <!-- Global Components -->
     @include('components.toast')
     @include('components.modal')
-    @include('leads.partials.drawer')
 
 </body>
 </html>
