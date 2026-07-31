@@ -74,8 +74,10 @@ try {
     $response->send();
 
 } catch (\Throwable $e) {
-    http_response_code(500);
-    header('Content-Type: text/html; charset=utf-8');
+    if (!headers_sent()) {
+        http_response_code(500);
+        header('Content-Type: text/html; charset=utf-8');
+    }
     echo '<div style="padding:20px;font-family:monospace;background:#fff1f0;border:2px solid #ffa39e;color:#cf1322;border-radius:8px;margin:20px;">';
     echo '<h2 style="margin-top:0;">⚠️ Vercel PHP Kök Hata Analizi</h2>';
     echo '<p><strong>Asıl Hata:</strong> ' . htmlspecialchars($e->getMessage()) . '</p>';
