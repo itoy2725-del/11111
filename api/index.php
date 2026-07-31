@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Vercel Serverless Entrypoint
+ * Vercel Serverless Entrypoint & Storage / Service Provider Handler
  */
 
 ini_set('display_errors', '1');
@@ -42,6 +42,11 @@ try {
 
     /** @var \Illuminate\Foundation\Application $app */
     $app = require __DIR__ . '/../bootstrap/app.php';
+
+    // Force register core service providers for serverless environment
+    $app->register(new \Illuminate\Filesystem\FilesystemServiceProvider($app));
+    $app->register(new \Illuminate\View\ViewServiceProvider($app));
+    $app->register(new \Illuminate\Session\SessionServiceProvider($app));
 
     $request = \Illuminate\Http\Request::capture();
     
