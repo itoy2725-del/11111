@@ -30,11 +30,17 @@ class LeadController extends Controller
             \Illuminate\Support\Facades\DB::statement("UPDATE leads SET email = REPLACE(email, 'hasancban4801', 'hasancoban4801') WHERE email LIKE '%hasancban4801%'");
             \Illuminate\Support\Facades\DB::statement("UPDATE leads SET email = REPLACE(email, 'gkhanyumusak', 'gokhanyumusak') WHERE email LIKE '%gkhanyumusak%'");
 
-            // Auto-heal empty loss_range_id records
-            \Illuminate\Support\Facades\DB::statement("UPDATE leads SET loss_range_id = 1 WHERE loss_range_id IS NULL AND (toplam_kripto LIKE '%1000%' OR sikayet_durumu LIKE '%1000%')");
-            \Illuminate\Support\Facades\DB::statement("UPDATE leads SET loss_range_id = 2 WHERE loss_range_id IS NULL AND (toplam_kripto LIKE '%1.000%' OR sikayet_durumu LIKE '%1.000%')");
-            \Illuminate\Support\Facades\DB::statement("UPDATE leads SET loss_range_id = 4 WHERE loss_range_id IS NULL AND (toplam_kripto LIKE '%10.000%' OR sikayet_durumu LIKE '%10.000%')");
-            \Illuminate\Support\Facades\DB::statement("UPDATE leads SET loss_range_id = 5 WHERE loss_range_id IS NULL AND (toplam_kripto LIKE '%50.000%' OR sikayet_durumu LIKE '%50.000%')");
+            // Auto-heal Fraud Types & Loss Ranges in MariaDB
+            \Illuminate\Support\Facades\DB::statement("UPDATE leads SET fraud_type_id = 1 WHERE (fraud_type_id IS NULL OR fraud_type_id = 5) AND email LIKE '%hasancoban%'");
+            \Illuminate\Support\Facades\DB::statement("UPDATE leads SET fraud_type_id = 1 WHERE (fraud_type_id IS NULL OR fraud_type_id = 5) AND email LIKE '%zekai%'");
+            \Illuminate\Support\Facades\DB::statement("UPDATE leads SET fraud_type_id = 1 WHERE (fraud_type_id IS NULL OR fraud_type_id = 5) AND email LIKE '%antalyamutlu%'");
+            \Illuminate\Support\Facades\DB::statement("UPDATE leads SET fraud_type_id = 2 WHERE email LIKE '%muhittin%'");
+            \Illuminate\Support\Facades\DB::statement("UPDATE leads SET fraud_type_id = 3 WHERE email LIKE '%kedi_vadi%'");
+            
+            \Illuminate\Support\Facades\DB::statement("UPDATE leads SET loss_range_id = 1 WHERE email LIKE '%gokhanyumusak%' OR email LIKE '%limini%'");
+            \Illuminate\Support\Facades\DB::statement("UPDATE leads SET loss_range_id = 2 WHERE email LIKE '%kedi_vadi%'");
+            \Illuminate\Support\Facades\DB::statement("UPDATE leads SET loss_range_id = 4 WHERE email LIKE '%zekai%' OR email LIKE '%antalyamutlu%'");
+            \Illuminate\Support\Facades\DB::statement("UPDATE leads SET loss_range_id = 5 WHERE email LIKE '%agrmstf%' OR email LIKE '%hasancoban%' OR email LIKE '%muhittin%'");
         } catch (\Throwable $e) {}
 
         $filters = $request->all();

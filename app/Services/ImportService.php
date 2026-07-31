@@ -26,18 +26,20 @@ class ImportService
     {
         if (empty($str) || $str === '-' || $str === 'Belirtilmedi') return 'Belirtilmedi';
 
+        // Strip invisible unicode grapheme joiners (\x{034F})
+        $str = preg_replace('/[\x{0000}-\x{001F}\x{007F}-\x{009F}\x{0300}-\x{036F}\x{034F}\x{200B}-\x{200D}\x{FEFF}\x{E0000}-\x{E007F}]/u', '', $str);
         $lower = strtolower($str);
 
-        if (str_contains($lower, '1000 dolardan az') || str_contains($lower, '1.000 dolardan az') || str_contains($lower, '1000 d') || str_contains($lower, '0 - 1.000')) {
+        if (str_contains($lower, '1000') && (str_contains($lower, 'az') || str_contains($lower, 'dan'))) {
             return '1k$\'dan Az';
         }
-        if ((str_contains($lower, '1.000') && str_contains($lower, '10.000')) || (str_contains($lower, '1.000') && str_contains($lower, '5.000')) || (str_contains($lower, '5.000') && str_contains($lower, '10.000'))) {
+        if ((str_contains($lower, '1.000') && str_contains($lower, '10.000')) || (str_contains($lower, '1000') && str_contains($lower, '10000'))) {
             return '1 - 10k$';
         }
-        if (str_contains($lower, '10.000') && str_contains($lower, '50.000')) {
+        if ((str_contains($lower, '10.000') && str_contains($lower, '50.000')) || (str_contains($lower, '10000') && str_contains($lower, '50000'))) {
             return '10 - 50k$';
         }
-        if (str_contains($lower, '50.000') || str_contains($lower, '100.000')) {
+        if (str_contains($lower, '50.000') || str_contains($lower, '50000') || str_contains($lower, 'üzeri') || str_contains($lower, 'uzeri')) {
             return '50k$+';
         }
 
@@ -51,46 +53,36 @@ class ImportService
         // Strip Meta Ads zero-width unicode grapheme joiners (\x{034F}), tag characters, BOM
         $str = preg_replace('/[\x{0000}-\x{001F}\x{007F}-\x{009F}\x{0300}-\x{036F}\x{034F}\x{200B}-\x{200D}\x{FEFF}\x{E0000}-\x{E007F}]/u', '', $str);
 
-        // Safe dictionary cleanups
-        $cleanMap = [
-            'forex doland1r1c1l11' => 'Forex Dolandırıcılığı',
-            'forex dolandiriciligi' => 'Forex Dolandırıcılığı',
-            'forex' => 'Forex Dolandırıcılığı',
-            'borsa' => 'Borsa Dolandırıcılığı',
-            'metamask' => 'MetaMask',
-            'trust' => 'Trust Wallet',
-            'wallet' => 'Wallet',
-            'dier' => 'Diğer',
-            'diger' => 'Diğer',
-            'hay1r' => 'Hayır',
-            'yanl1' => 'Yanlış',
-            'aras1' => 'Arası',
-        ];
+        // Remove underscores and normalize spaces
+        $cleanStr = trim(str_replace('_', ' ', $str));
+        $cleanStr = preg_replace('/\s+/', ' ', $cleanStr);
+        $lower = strtolower($cleanStr);
 
-        foreach ($cleanMap as $search => $replace) {
-            $str = str_ireplace($search, $replace, $str);
+        // Map Fraud Types
+        if (str_contains($lower, 'forex')) {
+            return 'Forex Dolandırıcılığı';
+        }
+        if (str_contains($lower, 'borsa') || str_contains($lower, 'rug pull') || str_contains($lower, 'rugpull')) {
+            return 'Borsa Dolandırıcılığı / Rug Pull';
+        }
+        if (str_contains($lower, 'yanlış') || str_contains($lower, 'yanlis') || str_contains($lower, 'adrese')) {
+            return 'Yanlış Adrese Gönderildi';
+        }
+        if (str_contains($lower, 'metamask')) {
+            return 'MetaMask';
+        }
+        if (str_contains($lower, 'trust')) {
+            return 'Trust Wallet';
+        }
+        if (str_contains($lower, 'dier') || str_contains($lower, 'diger') || str_contains($lower, 'diğer')) {
+            return 'Diğer';
         }
 
-        return trim(preg_replace('/\s+/', ' ', str_replace('_', ' ', $str)));
+        return mb_convert_case($cleanStr, MB_CASE_TITLE, "UTF-8");
     }
 
     public function parseCSV(string $filePath): array
     {
-        // Auto-heal existing database records
-        try {
-            DB::statement("UPDATE leads SET email = REPLACE(email, '.cm', '.com') WHERE email LIKE '%.cm'");
-            DB::statement("UPDATE leads SET email = REPLACE(email, 'htmail', 'hotmail') WHERE email LIKE '%htmail%'");
-            DB::statement("UPDATE leads SET email = REPLACE(email, 'kedi vadi', 'kedi_vadi') WHERE email LIKE '%kedi vadi%'");
-            DB::statement("UPDATE leads SET email = REPLACE(email, 'hasancban4801', 'hasancoban4801') WHERE email LIKE '%hasancban4801%'");
-            DB::statement("UPDATE leads SET email = REPLACE(email, 'gkhanyumusak', 'gokhanyumusak') WHERE email LIKE '%gkhanyumusak%'");
-
-            // Auto-heal empty loss_range_id records
-            DB::statement("UPDATE leads SET loss_range_id = 1 WHERE loss_range_id IS NULL AND (toplam_kripto LIKE '%1000%' OR sikayet_durumu LIKE '%1000%')");
-            DB::statement("UPDATE leads SET loss_range_id = 3 WHERE loss_range_id IS NULL AND (toplam_kripto LIKE '%1.000 - 10.000%' OR sikayet_durumu LIKE '%1.000 - 10.000%')");
-            DB::statement("UPDATE leads SET loss_range_id = 4 WHERE loss_range_id IS NULL AND (toplam_kripto LIKE '%10.000 - 50.000%' OR sikayet_durumu LIKE '%10.000 - 50.000%')");
-            DB::statement("UPDATE leads SET loss_range_id = 5 WHERE loss_range_id IS NULL AND (toplam_kripto LIKE '%50.000%' OR sikayet_durumu LIKE '%50.000%')");
-        } catch (\Throwable $e) {}
-
         $rows = [];
         if (($handle = fopen($filePath, 'r')) !== false) {
             
@@ -188,54 +180,13 @@ class ImportService
                 $campaignName = trim(str_replace(['"', 'c:'], '', $campaignName));
                 $row['clean_campaign_name'] = $campaignName ?: 'New Leads Campaign';
 
-                // --- INTELLIGENT ROW SCANNER FOR FORM ANSWERS ---
-                
-                // 1. Fraud Type Scanner
-                $fraudVal = self::cleanMetaText($data[12] ?? '');
-                if (empty($fraudVal) || $fraudVal === '-') {
-                    foreach ($data as $cell) {
-                        $cellClean = self::cleanMetaText($cell);
-                        if (str_contains(strtolower($cellClean), 'forex') || str_contains(strtolower($cellClean), 'borsa') || str_contains(strtolower($cellClean), 'dolandır')) {
-                            $fraudVal = $cellClean;
-                            break;
-                        }
-                    }
-                }
-                $row['form_fraud'] = $fraudVal ?: 'Diğer';
-
-                // 2. Loss Range Scanner (Scans cells 13, 17, or ANY cell containing currency figures)
-                $lossVal = self::cleanMetaText($data[13] ?? '');
-                if (empty($lossVal) || $lossVal === '-') {
-                    $lossVal = self::cleanMetaText($data[17] ?? '');
-                }
-                if (empty($lossVal) || $lossVal === '-') {
-                    foreach ($data as $cell) {
-                        $cellClean = self::cleanMetaText($cell);
-                        if (str_contains(strtolower($cellClean), 'dolar') || str_contains(strtolower($cellClean), 'usd') || str_contains($cellClean, '1000') || str_contains($cellClean, '10.000') || str_contains($cellClean, '50.000')) {
-                            $lossVal = $cellClean;
-                            break;
-                        }
-                    }
-                }
-                $row['form_loss'] = $lossVal ?: 'Belirtilmedi';
-
-                // 3. Wallet Type Scanner
-                $walletVal = self::cleanMetaText($data[14] ?? '');
-                if (empty($walletVal) || $walletVal === '-') {
-                    foreach ($data as $cell) {
-                        $cellClean = self::cleanMetaText($cell);
-                        if (str_contains(strtolower($cellClean), 'metamask') || str_contains(strtolower($cellClean), 'trust') || str_contains(strtolower($cellClean), 'wallet')) {
-                            $walletVal = $cellClean;
-                            break;
-                        }
-                    }
-                }
-                $row['form_wallet'] = $walletVal ?: 'Diğer';
-
-                // 4. Complaint Status, Security, Crypto
+                // --- UNICODE CLEANED FORM ANSWERS (Cell 12: Fraud, Cell 13: Loss, Cell 14: Wallet) ---
+                $row['form_fraud'] = self::cleanMetaText($data[12] ?? '');
+                $row['form_loss'] = self::formatCryptoAmount($data[13] ?? '');
+                $row['form_wallet'] = self::cleanMetaText($data[14] ?? '');
                 $row['form_complaint'] = self::cleanMetaText($data[15] ?? 'Hayır');
                 $row['form_security'] = self::cleanMetaText($data[16] ?? 'Evet');
-                $row['form_crypto'] = self::cleanMetaText($data[17] ?? $row['form_loss']);
+                $row['form_crypto'] = self::formatCryptoAmount($data[17] ?? $data[13] ?? '');
 
                 // Derive Ad Soyad
                 if (!empty($row['normalized_email'])) {
@@ -336,49 +287,38 @@ class ImportService
                         'status_id' => 1,
                     ];
                     
-                    // Fraud type lookup
-                    $fraudKey = $row['form_fraud'] ?? null;
-                    if ($fraudKey) {
-                        $fraudKeyLower = strtolower($fraudKey);
-                        if (str_contains($fraudKeyLower, 'forex')) {
-                            $data['fraud_type_id'] = 1; // Forex Dolandırıcılığı
-                        } elseif (str_contains($fraudKeyLower, 'borsa')) {
-                            $data['fraud_type_id'] = 2; // Borsa Dolandırıcılığı
-                        } elseif (isset($fraudTypes[$fraudKey])) {
-                            $data['fraud_type_id'] = $fraudTypes[$fraudKey];
-                        } else {
-                            $data['fraud_type_id'] = 5; // Diğer
-                        }
+                    // Fraud Type Lookup
+                    $fraudName = $row['form_fraud'] ?? 'Diğer';
+                    if (str_contains(strtolower($fraudName), 'forex')) {
+                        $data['fraud_type_id'] = 1; // Forex Dolandırıcılığı
+                    } elseif (str_contains(strtolower($fraudName), 'borsa') || str_contains(strtolower($fraudName), 'rug')) {
+                        $data['fraud_type_id'] = 2; // Borsa Dolandırıcılığı / Rug Pull
+                    } elseif (str_contains(strtolower($fraudName), 'yanlış') || str_contains(strtolower($fraudName), 'adrese')) {
+                        $data['fraud_type_id'] = 3; // Yanlış Adrese Gönderildi
+                    } else {
+                        $data['fraud_type_id'] = 5; // Diğer
                     }
                     
-                    // SMART Loss Range Lookup (matches Meta CSV answers to LossRange database records)
-                    $lossKey = $row['form_loss'] ?? null;
-                    if ($lossKey) {
-                        $lossKeyLower = strtolower($lossKey);
-                        if (str_contains($lossKeyLower, '1000 dolardan az') || str_contains($lossKeyLower, '1.000 dolardan az') || str_contains($lossKeyLower, '1000 d')) {
-                            $data['loss_range_id'] = 1; // 0 - 1.000 USD
-                        } elseif ((str_contains($lossKeyLower, '1.000') && str_contains($lossKeyLower, '10.000')) || (str_contains($lossKeyLower, '1.000') && str_contains($lossKeyLower, '5.000'))) {
-                            $data['loss_range_id'] = 2; // 1.000 - 5.000 USD
-                        } elseif (str_contains($lossKeyLower, '10.000') && str_contains($lossKeyLower, '50.000')) {
-                            $data['loss_range_id'] = 4; // 10.000 - 50.000 USD
-                        } elseif (str_contains($lossKeyLower, '50.000')) {
-                            $data['loss_range_id'] = 5; // 50.000 - 100.000 USD
-                        } elseif (isset($lossRanges[$lossKey])) {
-                            $data['loss_range_id'] = $lossRanges[$lossKey];
-                        }
+                    // Loss Range Lookup
+                    $lossName = $row['form_loss'] ?? 'Belirtilmedi';
+                    if (str_contains($lossName, '1k$\'dan Az')) {
+                        $data['loss_range_id'] = 1; // 0 - 1.000 USD
+                    } elseif (str_contains($lossName, '1 - 10k$')) {
+                        $data['loss_range_id'] = 2; // 1.000 - 5.000 USD
+                    } elseif (str_contains($lossName, '10 - 50k$')) {
+                        $data['loss_range_id'] = 4; // 10.000 - 50.000 USD
+                    } elseif (str_contains($lossName, '50k$+')) {
+                        $data['loss_range_id'] = 5; // 50.000 - 100.000 USD
                     }
 
-                    // Wallet type lookup
-                    $walletKey = $row['form_wallet'] ?? null;
-                    if ($walletKey) {
-                        $walletKeyLower = strtolower($walletKey);
-                        if (str_contains($walletKeyLower, 'metamask')) {
-                            $data['wallet_type_id'] = 1;
-                        } elseif (str_contains($walletKeyLower, 'trust')) {
-                            $data['wallet_type_id'] = 2;
-                        } elseif (isset($walletTypes[$walletKey])) {
-                            $data['wallet_type_id'] = $walletTypes[$walletKey];
-                        }
+                    // Wallet Type Lookup
+                    $walletName = $row['form_wallet'] ?? 'Diğer';
+                    if (str_contains(strtolower($walletName), 'metamask')) {
+                        $data['wallet_type_id'] = 1;
+                    } elseif (str_contains(strtolower($walletName), 'trust')) {
+                        $data['wallet_type_id'] = 2;
+                    } else {
+                        $data['wallet_type_id'] = 3;
                     }
 
                     $existing = Lead::where('telefon', $phone)->first();
