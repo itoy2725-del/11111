@@ -29,7 +29,7 @@
             
             <nav class="flex-1 px-2 py-4 space-y-1 overflow-y-auto custom-scrollbar">
                 @php
-                    $role = auth()->user()->role ?? 'operator'; 
+                    $role = auth()->user()->rol ?? 'operator'; 
                 @endphp
                 
                 @if($role === 'super_admin')
@@ -41,7 +41,7 @@
                         <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
                         <span class="ml-3 transition-opacity" :class="$store.sidebar.collapsed ? 'hidden' : 'block'">Leadler</span>
                     </a>
-                    <a href="{{ route('imports.index') }}" class="flex items-center px-2 py-2 text-sm font-medium rounded-md hover:bg-indigo-800 {{ request()->routeIs('imports.*') ? 'bg-indigo-800' : '' }}" title="CSV İçe Aktarma">
+                    <a href="{{ route('import.index') }}" class="flex items-center px-2 py-2 text-sm font-medium rounded-md hover:bg-indigo-800 {{ request()->routeIs('import.*') ? 'bg-indigo-800' : '' }}" title="CSV İçe Aktarma">
                         <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
                         <span class="ml-3 transition-opacity" :class="$store.sidebar.collapsed ? 'hidden' : 'block'">İçe Aktar</span>
                     </a>
@@ -57,7 +57,7 @@
                         <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"/></svg>
                         <span class="ml-3 transition-opacity" :class="$store.sidebar.collapsed ? 'hidden' : 'block'">Raporlar</span>
                     </a>
-                    <a href="{{ route('audit.index') }}" class="flex items-center px-2 py-2 text-sm font-medium rounded-md hover:bg-indigo-800 {{ request()->routeIs('audit.*') ? 'bg-indigo-800' : '' }}" title="Audit Log">
+                    <a href="{{ route('audit-logs.index') }}" class="flex items-center px-2 py-2 text-sm font-medium rounded-md hover:bg-indigo-800 {{ request()->routeIs('audit-logs.*') ? 'bg-indigo-800' : '' }}" title="Audit Log">
                         <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
                         <span class="ml-3 transition-opacity" :class="$store.sidebar.collapsed ? 'hidden' : 'block'">Audit Log</span>
                     </a>
@@ -78,7 +78,7 @@
                         <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
                         <span class="ml-3 transition-opacity" :class="$store.sidebar.collapsed ? 'hidden' : 'block'">Görevlerim</span>
                     </a>
-                    <a href="{{ route('profile.index') }}" class="flex items-center px-2 py-2 text-sm font-medium rounded-md hover:bg-indigo-800 {{ request()->routeIs('profile.*') ? 'bg-indigo-800' : '' }}" title="Profil">
+                    <a href="{{ route('profile') }}" class="flex items-center px-2 py-2 text-sm font-medium rounded-md hover:bg-indigo-800 {{ request()->routeIs('profile') ? 'bg-indigo-800' : '' }}" title="Profil">
                         <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
                         <span class="ml-3 transition-opacity" :class="$store.sidebar.collapsed ? 'hidden' : 'block'">Profil</span>
                     </a>
@@ -92,7 +92,7 @@
             <header class="bg-white border-b border-gray-200 h-16 flex items-center justify-between px-6 z-10 shrink-0">
                 <h1 class="text-xl font-semibold text-gray-800">@yield('title')</h1>
                 <div class="flex items-center space-x-4">
-                    <span class="text-sm text-gray-600 font-medium">{{ auth()->user()->name ?? 'Kullanıcı' }}</span>
+                    <span class="text-sm text-gray-600 font-medium">{{ auth()->user()->isim ?? 'Kullanıcı' }}</span>
                     <span class="px-2.5 py-0.5 text-xs font-semibold rounded-full {{ $role === 'super_admin' ? 'bg-indigo-100 text-indigo-800' : 'bg-green-100 text-green-800' }}">
                         {{ $role === 'super_admin' ? 'Admin' : 'Operatör' }}
                     </span>
