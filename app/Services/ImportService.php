@@ -16,7 +16,6 @@ class ImportService
 {
     public function validateHeaders(array $headers): array
     {
-        // Flexible validation: parseCSV intelligently auto-detects phone & email columns
         return [
             'valid' => true,
             'missing' => []
@@ -27,7 +26,19 @@ class ImportService
     {
         $rows = [];
         if (($handle = fopen($filePath, 'r')) !== false) {
-            $rawHeaders = fgetcsv($handle, 10000, ',');
+            
+            // Auto-detect CSV delimiter (Semicolon ';' vs Comma ',' vs Tab '\t')
+            $firstLine = fgets($handle);
+            rewind($handle);
+
+            $delimiter = ',';
+            if (substr_count($firstLine, ';') > substr_count($firstLine, ',')) {
+                $delimiter = ';';
+            } elseif (substr_count($firstLine, "\t") > substr_count($firstLine, ',')) {
+                $delimiter = "\t";
+            }
+
+            $rawHeaders = fgetcsv($handle, 10000, $delimiter);
             if (!$rawHeaders) {
                 fclose($handle);
                 return [];
@@ -62,9 +73,27 @@ class ImportService
                     break;
                 }
             }
+
+            // Intelligent name column detection
+            $nameHeader = null;
+            foreach ($headers as $h) {
+                if (str_contains($h, 'full_name') || str_contains($h, 'ad_soyad') || str_contains($h, 'name') || str_contains($h, 'isim') || str_contains($h, 'ad')) {
+                    $nameHeader = $h;
+                    break;
+                }
+            }
+
+            // Intelligent campaign column detection
+            $campaignHeader = null;
+            foreach ($headers as $h) {
+                if (str_contains($h, 'campaign') || str_contains($h, 'kampanya')) {
+                    $campaignHeader = $h;
+                    break;
+                }
+            }
             
             $rawRows = [];
-            while (($data = fgetcsv($handle, 10000, ',')) !== false) {
+            while (($data = fgetcsv($handle, 10000, $delimiter)) !== false) {
                 if (count($headers) !== count($data)) {
                     continue;
                 }
@@ -84,11 +113,10 @@ class ImportService
                 }
             }
 
-            // Build final rows
+            // Build final normalized rows
             foreach ($rawRows as $row) {
                 $phoneVal = $phoneHeader ? ($row[$phoneHeader] ?? null) : null;
                 if (!$phoneVal) {
-                    // Last resort: search row for any phone-like string
                     foreach ($row as $v) {
                         $c = preg_replace('/[^\d]/', '', (string)$v);
                         if (strlen($c) >= 7 && (str_starts_with($c, '90') || str_starts_with($c, '05') || str_starts_with($c, '5'))) {
@@ -105,6 +133,14 @@ class ImportService
                 $emailVal = $emailHeader ? ($row[$emailHeader] ?? null) : null;
                 if ($emailVal) {
                     $row['normalized_email'] = strtolower(trim($emailVal));
+                }
+
+                if ($nameHeader && isset($row[$nameHeader])) {
+                    $row['ad_soyad'] = trim($row[$nameHeader]);
+                }
+
+                if ($campaignHeader && isset($row[$campaignHeader])) {
+                    $row['campaign_name'] = trim($row[$campaignHeader]);
                 }
 
                 $rows[] = $row;
@@ -125,7 +161,7 @@ class ImportService
         foreach ($rows as $index => $row) {
             $phone = $row['normalized_phone'] ?? null;
             if (!$phone) {
-                $errors[] = "Satır " . ($index + 2) . ": Telefon numarası tespit edilemedi";
+                $errors[] = "Satır " . ($index + 2) . ": Telefon numarası bulunamadı";
                 continue;
             }
             
@@ -167,6 +203,7 @@ class ImportService
 
                 try {
                     $data = [
+                        'ad_soyad' => $row['ad_soyad'] ?? $row['full_name'] ?? $row['name'] ?? null,
                         'meta_lead_id' => $row['id'] ?? null,
                         'created_time' => isset($row['created_time']) ? Carbon::parse($row['created_time']) : null,
                         'ad_id' => $row['ad_id'] ?? null,
@@ -174,7 +211,7 @@ class ImportService
                         'adset_id' => $row['adset_id'] ?? null,
                         'adset_name' => $row['adset_name'] ?? null,
                         'campaign_id' => $row['campaign_id'] ?? null,
-                        'campaign_name' => $row['campaign_name'] ?? null,
+                        'campaign_name' => $row['campaign_name'] ?? $row['campaign'] ?? null,
                         'form_id' => $row['form_id'] ?? null,
                         'form_name' => $row['form_name'] ?? null,
                         'is_organic' => isset($row['is_organic']) && strtolower($row['is_organic']) === 'true',
