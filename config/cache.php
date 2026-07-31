@@ -2,9 +2,15 @@
 
 use Illuminate\Support\Str;
 
+$cachePath = is_dir('/tmp') ? '/tmp/storage/framework/cache/data' : storage_path('framework/cache/data');
+
+if (!is_dir($cachePath)) {
+    @mkdir($cachePath, 0755, true);
+}
+
 return [
 
-    'default' => env('CACHE_STORE', 'file'),
+    'default' => env('CACHE_STORE', is_dir('/tmp') ? 'array' : 'file'),
 
     'stores' => [
 
@@ -22,8 +28,8 @@ return [
 
         'file' => [
             'driver' => 'file',
-            'path' => storage_path('framework/cache/data'),
-            'lock_path' => storage_path('framework/cache/data'),
+            'path' => $cachePath,
+            'lock_path' => $cachePath,
         ],
 
         'memcached' => [
