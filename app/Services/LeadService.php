@@ -113,6 +113,34 @@ class LeadService
         );
     }
 
+    public function bulkAssignOperator(array $leadIds, int $newOperatorId, string $sebep): int
+    {
+        $newOperator = User::findOrFail($newOperatorId);
+        $count = 0;
+        
+        foreach ($leadIds as $leadId) {
+            $lead = Lead::find($leadId);
+            if (!$lead) continue;
+            
+            $oldOperator = $lead->operator;
+            $lead->update(['atanan_operator_id' => $newOperatorId]);
+            
+            LeadHistory::create([
+                'lead_id' => $lead->id,
+                'islem' => 'Toplu Operatör Ataması. Sebep: ' . $sebep,
+                'eski_deger' => $oldOperator ? $oldOperator->isim : 'Atanmamış',
+                'yeni_deger' => $newOperator->isim,
+                'yapan_kullanici' => Auth::id(),
+            ]);
+            
+            $count++;
+        }
+        
+        AuditService::logStatic('Toplu Operatör Atandı', 'Lead', null, null, "{$count} adet lead {$newOperator->isim} operatörüne atandı. Sebep: {$sebep}");
+        
+        return $count;
+    }
+
     public function deleteLead(Lead $lead): void
     {
         $leadId = $lead->id;

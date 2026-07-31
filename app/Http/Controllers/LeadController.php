@@ -117,6 +117,24 @@ class LeadController extends Controller
         return redirect()->back()->with('success', 'Operatör atandı.');
     }
 
+    public function bulkAssignOperator(Request $request)
+    {
+        $request->validate([
+            'lead_ids' => 'required|array',
+            'lead_ids.*' => 'exists:leads,id',
+            'operator_id' => 'required|exists:users,id',
+            'sebep' => 'required|string|max:255'
+        ]);
+
+        $count = $this->leadService->bulkAssignOperator(
+            $request->lead_ids,
+            $request->operator_id,
+            $request->sebep
+        );
+
+        return redirect()->back()->with('success', "Seçilen {$count} adet lead başarıyla operatöre atandı.");
+    }
+
     public function addNote(Request $request, int $id)
     {
         $request->validate(['note' => 'required|string']);
