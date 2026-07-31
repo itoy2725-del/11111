@@ -16,28 +16,7 @@ class ImportService
 {
     public function validateHeaders(array $headers): array
     {
-        $normalizedHeaders = array_map(function($h) {
-            $h = preg_replace('/\x{FEFF}/u', '', $h);
-            return strtolower(trim(str_replace([' ', '-'], '_', $h)));
-        }, $headers);
-
-        // Check for telephone column in Turkish or English
-        $phoneKeys = ['telefon_numarası', 'telefon', 'phone_number', 'phone', 'mobile'];
-        $hasPhone = false;
-        foreach ($phoneKeys as $key) {
-            if (in_array($key, $normalizedHeaders)) {
-                $hasPhone = true;
-                break;
-            }
-        }
-
-        if (!$hasPhone) {
-            return [
-                'valid' => false,
-                'missing' => ['Telefon Numarası (telefon_numarası / phone_number)']
-            ];
-        }
-
+        // Flexible validation: parseCSV intelligently auto-detects phone & email columns
         return [
             'valid' => true,
             'missing' => []
@@ -48,8 +27,8 @@ class ImportService
     {
         $rows = [];
         if (($handle = fopen($filePath, 'r')) !== false) {
-            $headers = fgetcsv($handle, 10000, ',');
-            if (!$headers) {
+            $rawHeaders = fgetcsv($handle, 10000, ',');
+            if (!$rawHeaders) {
                 fclose($handle);
                 return [];
             }
@@ -59,30 +38,79 @@ class ImportService
                 $h = preg_replace('/\x{FEFF}/u', '', $h);
                 return strtolower(trim(str_replace([' ', '-'], '_', $h)));
             }, $headers);
+
+            // Intelligent phone column detection
+            $phoneHeader = null;
+            foreach ($headers as $h) {
+                if (
+                    str_contains($h, 'telefon') || 
+                    str_contains($h, 'phone') || 
+                    str_contains($h, 'mobile') || 
+                    str_contains($h, 'tel') || 
+                    str_contains($h, 'numar')
+                ) {
+                    $phoneHeader = $h;
+                    break;
+                }
+            }
+
+            // Intelligent email column detection
+            $emailHeader = null;
+            foreach ($headers as $h) {
+                if (str_contains($h, 'email') || str_contains($h, 'posta') || str_contains($h, 'mail')) {
+                    $emailHeader = $h;
+                    break;
+                }
+            }
             
+            $rawRows = [];
             while (($data = fgetcsv($handle, 10000, ',')) !== false) {
                 if (count($headers) !== count($data)) {
                     continue;
                 }
-                
-                $row = array_combine($headers, $data);
-                
-                // Flexible phone extraction & normalization: p:+905399271922 → +905399271922
-                $phoneVal = $row['telefon_numarası'] ?? $row['phone_number'] ?? $row['telefon'] ?? $row['phone'] ?? null;
+                $rawRows[] = array_combine($headers, $data);
+            }
+            fclose($handle);
+
+            // Fallback: If no phone header matched keywords, inspect first row data for phone patterns
+            if (!$phoneHeader && !empty($rawRows)) {
+                $firstRow = $rawRows[0];
+                foreach ($firstRow as $col => $val) {
+                    $cleanVal = preg_replace('/[^\d]/', '', (string)$val);
+                    if (strlen($cleanVal) >= 7 && (str_starts_with($cleanVal, '90') || str_starts_with($cleanVal, '05') || str_starts_with($cleanVal, '5'))) {
+                        $phoneHeader = $col;
+                        break;
+                    }
+                }
+            }
+
+            // Build final rows
+            foreach ($rawRows as $row) {
+                $phoneVal = $phoneHeader ? ($row[$phoneHeader] ?? null) : null;
+                if (!$phoneVal) {
+                    // Last resort: search row for any phone-like string
+                    foreach ($row as $v) {
+                        $c = preg_replace('/[^\d]/', '', (string)$v);
+                        if (strlen($c) >= 7 && (str_starts_with($c, '90') || str_starts_with($c, '05') || str_starts_with($c, '5'))) {
+                            $phoneVal = $v;
+                            break;
+                        }
+                    }
+                }
+
                 if ($phoneVal) {
                     $row['normalized_phone'] = preg_replace('/^p:/', '', trim($phoneVal));
                 }
-                
-                // Flexible email extraction
-                $emailVal = $row['e-posta'] ?? $row['email'] ?? null;
+
+                $emailVal = $emailHeader ? ($row[$emailHeader] ?? null) : null;
                 if ($emailVal) {
                     $row['normalized_email'] = strtolower(trim($emailVal));
                 }
-                
+
                 $rows[] = $row;
             }
-            fclose($handle);
         }
+
         return $rows;
     }
 
@@ -97,7 +125,7 @@ class ImportService
         foreach ($rows as $index => $row) {
             $phone = $row['normalized_phone'] ?? null;
             if (!$phone) {
-                $errors[] = "Satır " . ($index + 2) . ": Telefon numarası bulunamadı";
+                $errors[] = "Satır " . ($index + 2) . ": Telefon numarası tespit edilemedi";
                 continue;
             }
             
