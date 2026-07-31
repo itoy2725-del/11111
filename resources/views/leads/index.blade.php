@@ -8,7 +8,7 @@
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 transition-colors">
         <div>
             <h1 class="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">Lead Listesi & Müşteri Takibi</h1>
-            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium">Sistemdeki tüm potansiyel müşterilerinizi görüntüleyin, filtreleyin ve yönetin.</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium">Sistemdeki tüm potansiyel müşterilerinizi ve form yanıtlarını detaylıca inceleyin.</p>
         </div>
         <div class="flex items-center space-x-3">
             <a href="{{ route('import.index') }}" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md transition-colors flex items-center space-x-2">
@@ -20,7 +20,7 @@
 
     <!-- Filters Card -->
     <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 transition-colors">
-        <form method="GET" action="{{ route('leads.index') }}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <form method="GET" action="{{ route('leads.index') }}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
                 <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">Canlı Arama</label>
                 <input type="text" name="search" value="{{ request('search') }}" placeholder="Ad Soyad, Telefon, Email..." class="w-full px-3.5 py-2 text-sm border border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
@@ -48,16 +48,6 @@
             </div>
             @endif
 
-            <div>
-                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">Kampanya</label>
-                <select name="campaign_name" class="w-full px-3.5 py-2 text-sm border border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
-                    <option value="">Tüm Kampanyalar</option>
-                    @foreach($campaigns as $camp)
-                        <option value="{{ $camp }}" {{ request('campaign_name') == $camp ? 'selected' : '' }}>{{ $camp }}</option>
-                    @endforeach
-                </select>
-            </div>
-
             <div class="flex items-end space-x-2">
                 <button type="submit" class="flex-1 py-2 bg-slate-900 hover:bg-slate-800 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-sm transition-colors flex items-center justify-center space-x-1">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
@@ -73,7 +63,7 @@
     <!-- Data Table Card -->
     <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden transition-colors">
         <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 flex justify-between items-center">
-            <h3 class="font-bold text-slate-800 dark:text-slate-100 text-sm">Lead Verileri (Toplam: {{ $leads->total() }})</h3>
+            <h3 class="font-bold text-slate-800 dark:text-slate-100 text-sm">Lead Verileri & Form Yanıtları (Toplam: {{ $leads->total() }})</h3>
             <span class="text-xs text-slate-500 dark:text-slate-400 font-medium">Sayfa {{ $leads->currentPage() }} / {{ $leads->lastPage() }}</span>
         </div>
         
@@ -81,23 +71,36 @@
             <table class="w-full text-xs text-left text-slate-600 dark:text-slate-300">
                 <thead class="text-[11px] text-slate-500 dark:text-slate-400 uppercase bg-slate-100 dark:bg-slate-900 font-bold border-b border-slate-200 dark:border-slate-800">
                     <tr>
-                        <th class="px-5 py-3.5 whitespace-nowrap">ID / Ad Soyad</th>
-                        <th class="px-5 py-3.5 whitespace-nowrap">Telefon</th>
-                        <th class="px-5 py-3.5 whitespace-nowrap">E-posta</th>
-                        <th class="px-5 py-3.5 whitespace-nowrap">Durum (Seçilebilir)</th>
-                        <th class="px-5 py-3.5 whitespace-nowrap">Atanan Operatör</th>
-                        <th class="px-5 py-3.5 whitespace-nowrap">Kampanya</th>
-                        <th class="px-5 py-3.5 whitespace-nowrap">Tarih</th>
-                        <th class="px-5 py-3.5 whitespace-nowrap text-right">İşlemler & Loglar</th>
+                        <th class="px-4 py-3.5 whitespace-nowrap">ID / Ad Soyad</th>
+                        <th class="px-4 py-3.5 whitespace-nowrap">Telefon</th>
+                        <th class="px-4 py-3.5 whitespace-nowrap">E-posta</th>
+                        <th class="px-4 py-3.5 whitespace-nowrap">Durum (Seçilebilir)</th>
+                        <th class="px-4 py-3.5 whitespace-nowrap">Atanan Operatör</th>
+                        <th class="px-4 py-3.5 whitespace-nowrap">Dolandırıcılık Türü</th>
+                        <th class="px-4 py-3.5 whitespace-nowrap">Kayıp Miktarı</th>
+                        <th class="px-4 py-3.5 whitespace-nowrap">Cüzdan Türü</th>
+                        <th class="px-4 py-3.5 whitespace-nowrap">Polise Şikayet</th>
+                        <th class="px-4 py-3.5 whitespace-nowrap">Ek Güvenlik</th>
+                        <th class="px-4 py-3.5 whitespace-nowrap">Mevcut Kripto</th>
+                        <th class="px-4 py-3.5 whitespace-nowrap">Tarih</th>
+                        <th class="px-4 py-3.5 whitespace-nowrap text-right">İşlemler & Loglar</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
                     @forelse($leads as $lead)
+                        @php
+                            $fraud = \App\Services\ImportService::cleanMetaText($lead->fraudType->isim ?? $lead->sikayet_durumu ?? '-');
+                            $loss = \App\Services\ImportService::cleanMetaText($lead->lossRange->isim ?? '-');
+                            $wallet = \App\Services\ImportService::cleanMetaText($lead->walletType->isim ?? '-');
+                            $complaint = \App\Services\ImportService::cleanMetaText($lead->sikayet_durumu ?? '-');
+                            $security = \App\Services\ImportService::cleanMetaText($lead->ek_guvenlik_hizmeti ?? '-');
+                            $crypto = \App\Services\ImportService::cleanMetaText($lead->toplam_kripto ?? '-');
+                        @endphp
                         <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                             <!-- Ad Soyad & ID -->
-                            <td class="px-5 py-4 whitespace-nowrap">
-                                <div class="flex items-center space-x-3">
-                                    <div class="w-8 h-8 rounded-xl bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 font-extrabold flex items-center justify-center text-xs shadow-sm">
+                            <td class="px-4 py-3.5 whitespace-nowrap">
+                                <div class="flex items-center space-x-2.5">
+                                    <div class="w-7 h-7 rounded-lg bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 font-extrabold flex items-center justify-center text-xs shrink-0">
                                         {{ mb_substr($lead->ad_soyad ?? 'M', 0, 1) }}
                                     </div>
                                     <div>
@@ -110,24 +113,24 @@
                             </td>
                             
                             <!-- Telefon -->
-                            <td class="px-5 py-4 whitespace-nowrap font-mono font-bold text-slate-900 dark:text-slate-100 select-all">
-                                <span>{{ $lead->telefon }}</span>
+                            <td class="px-4 py-3.5 whitespace-nowrap font-mono font-bold text-slate-900 dark:text-slate-100 select-all">
+                                {{ $lead->telefon }}
                             </td>
                             
                             <!-- E-posta -->
-                            <td class="px-5 py-4 whitespace-nowrap text-slate-700 dark:text-slate-300">
+                            <td class="px-4 py-3.5 whitespace-nowrap text-slate-700 dark:text-slate-300">
                                 {{ $lead->email ?: '-' }}
                             </td>
                             
                             <!-- Durum (Selectable) -->
-                            <td class="px-5 py-4 whitespace-nowrap">
+                            <td class="px-4 py-3.5 whitespace-nowrap">
                                 <form action="{{ route('leads.update', $lead->id) }}" method="POST" class="inline-block">
                                     @csrf
                                     @method('PUT')
                                     <select 
                                         name="status_id" 
                                         onchange="this.form.submit()" 
-                                        class="px-3 py-1 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer shadow-sm"
+                                        class="px-2.5 py-1 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer shadow-sm"
                                         style="border-left-width: 4px; border-left-color: {{ $lead->status->renk ?? '#6366f1' }}"
                                     >
                                         @foreach($statuses as $st)
@@ -140,7 +143,7 @@
                             </td>
                             
                             <!-- Atanan Operatör -->
-                            <td class="px-5 py-4 whitespace-nowrap">
+                            <td class="px-4 py-3.5 whitespace-nowrap">
                                 @if($lead->operator)
                                     <div class="flex items-center space-x-1.5">
                                         <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
@@ -151,19 +154,49 @@
                                 @endif
                             </td>
                             
-                            <!-- Kampanya -->
-                            <td class="px-5 py-4 whitespace-nowrap text-xs text-slate-600 dark:text-slate-400 font-medium">
-                                {{ $lead->campaign_name ?: '-' }}
+                            <!-- Dolandırıcılık Türü -->
+                            <td class="px-4 py-3.5 whitespace-nowrap">
+                                <span class="px-2 py-0.5 rounded text-[11px] font-medium bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 border border-red-100 dark:border-red-900">
+                                    {{ $fraud ?: '-' }}
+                                </span>
                             </td>
-                            
+
+                            <!-- Kayıp Miktarı -->
+                            <td class="px-4 py-3.5 whitespace-nowrap font-bold text-slate-800 dark:text-slate-200">
+                                {{ $loss ?: '-' }}
+                            </td>
+
+                            <!-- Cüzdan Türü -->
+                            <td class="px-4 py-3.5 whitespace-nowrap text-slate-700 dark:text-slate-300">
+                                {{ $wallet ?: '-' }}
+                            </td>
+
+                            <!-- Polise Şikayet -->
+                            <td class="px-4 py-3.5 whitespace-nowrap">
+                                <span class="px-2 py-0.5 rounded text-[11px] font-bold {{ strtolower($complaint) === 'evet' ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400' }}">
+                                    {{ ucfirst($complaint ?: '-') }}
+                                </span>
+                            </td>
+
+                            <!-- Ek Güvenlik -->
+                            <td class="px-4 py-3.5 whitespace-nowrap">
+                                <span class="px-2 py-0.5 rounded text-[11px] font-bold {{ strtolower($security) === 'evet' ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400' }}">
+                                    {{ ucfirst($security ?: '-') }}
+                                </span>
+                            </td>
+
+                            <!-- Mevcut Kripto -->
+                            <td class="px-4 py-3.5 whitespace-nowrap font-medium text-slate-700 dark:text-slate-300">
+                                {{ $crypto ?: '-' }}
+                            </td>
+
                             <!-- Tarih -->
-                            <td class="px-5 py-4 whitespace-nowrap text-xs text-slate-500 dark:text-slate-400 font-mono">
+                            <td class="px-4 py-3.5 whitespace-nowrap text-xs text-slate-500 dark:text-slate-400 font-mono">
                                 {{ $lead->created_at ? $lead->created_at->format('d.m.Y H:i') : '-' }}
                             </td>
                             
                             <!-- İşlemler & LOG SEÇME BUTONU -->
-                            <td class="px-5 py-4 whitespace-nowrap text-right space-x-1.5">
-                                <!-- Log Seçme & Görüntüleme Butonu -->
+                            <td class="px-4 py-3.5 whitespace-nowrap text-right space-x-1.5">
                                 <button 
                                     @click="
                                         showLogModal = true;
@@ -189,7 +222,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="px-6 py-12 text-center text-slate-400">
+                            <td colspan="13" class="px-6 py-12 text-center text-slate-400">
                                 <div class="max-w-xs mx-auto text-center space-y-2">
                                     <p class="text-3xl">📭</p>
                                     <p class="font-bold text-slate-700 dark:text-slate-200 text-base">Kayıtlı Lead Bulunamadı</p>
