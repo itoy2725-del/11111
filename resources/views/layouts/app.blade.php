@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Siber Güvenlik CRM') - CRM</title>
+    <title>@yield('title', 'CRM') - CRM</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="font-sans antialiased text-gray-900 bg-slate-50" x-data>
@@ -18,7 +18,7 @@
         >
             <div class="flex items-center justify-between h-16 px-4 border-b border-indigo-800">
                 <span class="font-bold text-lg whitespace-nowrap overflow-hidden transition-opacity" :class="$store.sidebar.collapsed ? 'opacity-0 w-0' : 'opacity-100'">
-                    Siber CRM
+                    CRM
                 </span>
                 <button @click="$store.sidebar.toggle()" class="p-1 rounded-md hover:bg-indigo-800 focus:outline-none">
                     <svg class="w-5 h-5 text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -111,7 +111,7 @@
             </div>
             
             <footer class="bg-white border-t border-gray-200 p-4 text-center text-sm text-gray-500 shrink-0">
-                &copy; {{ date('Y') }} Siber Güvenlik CRM. Tüm hakları saklıdır.
+                &copy; {{ date('Y') }} CRM. Tüm hakları saklıdır.
             </footer>
         </main>
     </div>

@@ -2,7 +2,7 @@
 
 return [
 
-    'name' => env('APP_NAME', 'Siber Güvenlik CRM'),
+    'name' => env('APP_NAME', 'CRM'),
 
     'env' => env('APP_ENV', 'production'),
 

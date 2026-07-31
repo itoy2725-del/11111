@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Veritabanı Durum Kontrolü - Siber Güvenlik CRM</title>
+    <title>Veritabanı Durum Kontrolü - CRM</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-slate-100 font-sans antialiased text-gray-900 min-h-screen p-6">
@@ -13,7 +13,7 @@
         <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 flex justify-between items-center">
             <div>
                 <h1 class="text-2xl font-bold text-gray-900">Veritabanı Bağlantı & Durum Kontrolü</h1>
-                <p class="text-sm text-gray-500 mt-1">Siber Güvenlik Başvuru Yönetim Sistem Bağlantı Analizörü</p>
+                <p class="text-sm text-gray-500 mt-1">CRM Bağlantı Analizörü</p>
             </div>
             <a href="{{ route('login') }}" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium text-sm transition-colors">
                 Giriş Ekranına Git →
