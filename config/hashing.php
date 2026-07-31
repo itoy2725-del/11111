@@ -2,7 +2,7 @@
 
 return [
 
-    'driver' => 'argon2id',
+    'driver' => env('HASH_DRIVER', 'bcrypt'),
 
     'bcrypt' => [
         'rounds' => env('BCRYPT_ROUNDS', 12),
