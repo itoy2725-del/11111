@@ -4,15 +4,15 @@ use Illuminate\Support\Str;
 
 return [
 
-    'driver' => env('SESSION_DRIVER', 'database'),
+    'driver' => env('SESSION_DRIVER', 'cookie'),
 
     'lifetime' => env('SESSION_LIFETIME', 120),
 
     'expire_on_close' => false,
 
-    'encrypt' => env('SESSION_ENCRYPT', true),
+    'encrypt' => env('SESSION_ENCRYPT', false),
 
-    'files' => storage_path('framework/sessions'),
+    'files' => env('SESSION_FILE_PATH', storage_path('framework/sessions')),
 
     'connection' => env('SESSION_CONNECTION'),
 
@@ -24,14 +24,14 @@ return [
 
     'cookie' => env(
         'SESSION_COOKIE',
-        Str::slug(env('APP_NAME', 'laravel'), '_').'_session'
+        Str::slug(env('APP_NAME', 'siber_crm'), '_').'_session'
     ),
 
     'path' => env('SESSION_PATH', '/'),
 
     'domain' => env('SESSION_DOMAIN'),
 
-    'secure' => env('SESSION_SECURE_COOKIE', true),
+    'secure' => env('SESSION_SECURE_COOKIE', false),
 
     'http_only' => true,
 
