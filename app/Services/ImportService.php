@@ -22,6 +22,28 @@ class ImportService
         ];
     }
 
+    public static function formatCryptoAmount(?string $str): string
+    {
+        if (empty($str) || $str === '-') return '-';
+
+        $lower = strtolower($str);
+
+        if (str_contains($lower, '1000 dolardan az') || str_contains($lower, '1.000 dolardan az') || str_contains($lower, '1000 d')) {
+            return '1k$\'dan Az';
+        }
+        if (str_contains($lower, '1.000') && str_contains($lower, '10.000')) {
+            return '1 - 10k$';
+        }
+        if (str_contains($lower, '10.000') && str_contains($lower, '50.000')) {
+            return '10 - 50k$';
+        }
+        if (str_contains($lower, '50.000')) {
+            return '50k$+';
+        }
+
+        return self::cleanMetaText($str);
+    }
+
     public static function cleanMetaText(?string $str): string
     {
         if (empty($str)) return '';

@@ -72,45 +72,45 @@
                 </h3>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
-                    <div class="bg-slate-50 p-4 rounded-xl border border-gray-100">
-                        <p class="text-xs font-semibold text-gray-500 uppercase">Dolandırıcılık Türü</p>
-                        <p class="text-base font-bold text-red-600 mt-1">
-                            {{ $lead->fraudType->isim ?? $lead->sikayet_durumu ?? '-' }}
+                    <div class="bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border border-gray-100 dark:border-slate-700">
+                        <p class="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase">Dolandırıcılık Türü</p>
+                        <p class="text-base font-bold text-red-600 dark:text-red-400 mt-1">
+                            {{ \App\Services\ImportService::cleanMetaText($lead->fraudType->isim ?? $lead->sikayet_durumu ?? '-') }}
                         </p>
                     </div>
                     
-                    <div class="bg-slate-50 p-4 rounded-xl border border-gray-100">
-                        <p class="text-xs font-semibold text-gray-500 uppercase">Kayıp Miktarı</p>
-                        <p class="text-base font-bold text-gray-900 mt-1">
-                            {{ $lead->lossRange->isim ?? '-' }}
+                    <div class="bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border border-gray-100 dark:border-slate-700">
+                        <p class="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase">Kayıp Miktarı</p>
+                        <p class="text-base font-bold text-gray-900 dark:text-slate-100 mt-1">
+                            {{ \App\Services\ImportService::formatCryptoAmount($lead->lossRange->isim ?? '-') }}
                         </p>
                     </div>
                     
-                    <div class="bg-slate-50 p-4 rounded-xl border border-gray-100">
-                        <p class="text-xs font-semibold text-gray-500 uppercase">Cüzdan Türü</p>
-                        <p class="text-base font-bold text-gray-900 mt-1">
-                            {{ $lead->walletType->isim ?? '-' }}
+                    <div class="bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border border-gray-100 dark:border-slate-700">
+                        <p class="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase">Cüzdan Türü</p>
+                        <p class="text-base font-bold text-gray-900 dark:text-slate-100 mt-1">
+                            {{ \App\Services\ImportService::cleanMetaText($lead->walletType->isim ?? '-') }}
                         </p>
                     </div>
                     
-                    <div class="bg-slate-50 p-4 rounded-xl border border-gray-100">
-                        <p class="text-xs font-semibold text-gray-500 uppercase">Polise / İhbar Şikayet</p>
-                        <p class="text-base font-bold text-gray-900 mt-1">
-                            {{ $lead->sikayet_durumu ?: '-' }}
+                    <div class="bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border border-gray-100 dark:border-slate-700">
+                        <p class="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase">Polise / İhbar Şikayet</p>
+                        <p class="text-base font-bold text-gray-900 dark:text-slate-100 mt-1">
+                            {{ \App\Services\ImportService::cleanMetaText($lead->sikayet_durumu ?: '-') }}
                         </p>
                     </div>
 
-                    <div class="bg-slate-50 p-4 rounded-xl border border-gray-100">
-                        <p class="text-xs font-semibold text-gray-500 uppercase">Ek Güvenlik Hizmeti</p>
-                        <p class="text-base font-bold text-gray-900 mt-1">
-                            {{ $lead->ek_guvenlik_hizmeti ?: '-' }}
+                    <div class="bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border border-gray-100 dark:border-slate-700">
+                        <p class="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase">Ek Güvenlik Hizmeti</p>
+                        <p class="text-base font-bold text-gray-900 dark:text-slate-100 mt-1">
+                            {{ \App\Services\ImportService::cleanMetaText($lead->ek_guvenlik_hizmeti ?: '-') }}
                         </p>
                     </div>
 
-                    <div class="bg-slate-50 p-4 rounded-xl border border-gray-100">
-                        <p class="text-xs font-semibold text-gray-500 uppercase">Mevcut Toplam Kripto</p>
-                        <p class="text-base font-bold text-gray-900 mt-1">
-                            {{ $lead->toplam_kripto ?: '-' }}
+                    <div class="bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border border-gray-100 dark:border-slate-700">
+                        <p class="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase">Mevcut Toplam Kripto</p>
+                        <p class="text-base font-bold text-gray-900 dark:text-slate-100 mt-1">
+                            {{ \App\Services\ImportService::formatCryptoAmount($lead->toplam_kripto ?: '-') }}
                         </p>
                     </div>
                 </div>

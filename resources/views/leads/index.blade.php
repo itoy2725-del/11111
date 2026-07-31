@@ -3,7 +3,7 @@
 @section('title', 'Lead Yönetimi')
 
 @section('content')
-<div class="space-y-6" x-data="{ showLogModal: false, activeLeadName: '', logs: [], loadingLogs: false }">
+<div class="space-y-6">
     <!-- Header Title & Action Buttons -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 transition-colors">
         <div>
@@ -83,18 +83,18 @@
                         <th class="px-4 py-3.5 whitespace-nowrap">Ek Güvenlik</th>
                         <th class="px-4 py-3.5 whitespace-nowrap">Mevcut Kripto</th>
                         <th class="px-4 py-3.5 whitespace-nowrap">Tarih</th>
-                        <th class="px-4 py-3.5 whitespace-nowrap text-right">İşlemler & Loglar</th>
+                        <th class="px-4 py-3.5 whitespace-nowrap text-right">İşlem</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
                     @forelse($leads as $lead)
                         @php
                             $fraud = \App\Services\ImportService::cleanMetaText($lead->fraudType->isim ?? $lead->sikayet_durumu ?? '-');
-                            $loss = \App\Services\ImportService::cleanMetaText($lead->lossRange->isim ?? '-');
+                            $loss = \App\Services\ImportService::formatCryptoAmount($lead->lossRange->isim ?? '-');
                             $wallet = \App\Services\ImportService::cleanMetaText($lead->walletType->isim ?? '-');
                             $complaint = \App\Services\ImportService::cleanMetaText($lead->sikayet_durumu ?? '-');
                             $security = \App\Services\ImportService::cleanMetaText($lead->ek_guvenlik_hizmeti ?? '-');
-                            $crypto = \App\Services\ImportService::cleanMetaText($lead->toplam_kripto ?? '-');
+                            $crypto = \App\Services\ImportService::formatCryptoAmount($lead->toplam_kripto ?? '-');
                         @endphp
                         <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                             <!-- Ad Soyad & ID -->
@@ -195,26 +195,9 @@
                                 {{ $lead->created_at ? $lead->created_at->format('d.m.Y H:i') : '-' }}
                             </td>
                             
-                            <!-- İşlemler & LOG SEÇME BUTONU -->
-                            <td class="px-4 py-3.5 whitespace-nowrap text-right space-x-1.5">
-                                <button 
-                                    @click="
-                                        showLogModal = true;
-                                        activeLeadName = '{{ addslashes($lead->ad_soyad ?? 'Lead #' . $lead->id) }}';
-                                        loadingLogs = true;
-                                        logs = [];
-                                        fetch('{{ route('leads.logs', $lead->id) }}')
-                                            .then(res => res.json())
-                                            .then(data => { logs = data.logs || []; loadingLogs = false; })
-                                            .catch(() => { loadingLogs = false; })
-                                    "
-                                    class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition-colors inline-flex items-center space-x-1"
-                                    title="İşlem Geçmişi ve Logları İncele"
-                                >
-                                    <span>📜 Loglar</span>
-                                </button>
-
-                                <a href="{{ route('leads.show', $lead->id) }}" class="px-3 py-1.5 bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 dark:hover:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded-xl text-xs font-bold transition-colors inline-flex items-center space-x-1">
+                            <!-- İşlem -->
+                            <td class="px-4 py-3.5 whitespace-nowrap text-right">
+                                <a href="{{ route('leads.show', $lead->id) }}" class="px-3.5 py-1.5 bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 dark:hover:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded-xl text-xs font-bold transition-colors inline-flex items-center space-x-1">
                                     <span>İncele</span>
                                     <span>→</span>
                                 </a>
@@ -242,60 +225,6 @@
                 {{ $leads->withQueryString()->links() }}
             </div>
         @endif
-    </div>
-
-    <!-- LOG GÖRÜNTÜLEME MODAL (ALPINEJS) -->
-    <div x-show="showLogModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm" style="display: none;">
-        <div @click.away="showLogModal = false" class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 w-full max-w-lg overflow-hidden space-y-4 p-6">
-            <div class="flex justify-between items-center pb-3 border-b border-slate-100 dark:border-slate-800">
-                <div>
-                    <h3 class="font-black text-slate-900 dark:text-slate-100 text-base flex items-center space-x-2">
-                        <span>📜 İşlem Logları:</span>
-                        <span class="text-indigo-600 dark:text-indigo-400" x-text="activeLeadName"></span>
-                    </h3>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Bu lead üzerinde gerçekleştirilen tüm değişiklik ve geçmiş kayıtları.</p>
-                </div>
-                <button @click="showLogModal = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-bold text-lg p-1">✕</button>
-            </div>
-
-            <!-- Loading indicator -->
-            <div x-show="loadingLogs" class="text-center py-8 space-y-2">
-                <div class="inline-block w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-                <p class="text-xs font-semibold text-slate-500">Loglar yükleniyor...</p>
-            </div>
-
-            <!-- Log Timeline list -->
-            <div x-show="!loadingLogs" class="max-h-80 overflow-y-auto custom-scrollbar space-y-3 pr-1">
-                <template x-if="logs.length === 0">
-                    <p class="text-xs text-slate-400 text-center py-6">Bu lead için kayıtlı işlem logu bulunamadı.</p>
-                </template>
-
-                <template x-for="log in logs" :key="log.id">
-                    <div class="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200/60 dark:border-slate-700/60 space-y-1 text-xs">
-                        <div class="flex justify-between items-center">
-                            <span class="font-bold text-slate-900 dark:text-slate-100" x-text="log.islem"></span>
-                            <span class="text-[10px] font-mono text-slate-400" x-text="new Date(log.created_at).toLocaleString('tr-TR')"></span>
-                        </div>
-                        <template x-if="log.eski_deger || log.yeni_deger">
-                            <p class="text-slate-500 dark:text-slate-400 text-[11px]">
-                                <span class="line-through text-red-500/80" x-text="log.eski_deger || ''"></span> 
-                                ➔ 
-                                <span class="font-bold text-emerald-600 dark:text-emerald-400" x-text="log.yeni_deger || ''"></span>
-                            </p>
-                        </template>
-                        <p class="text-[10px] text-slate-400 font-medium">
-                            İşlemi Yapan: <span class="font-bold text-slate-600 dark:text-slate-300" x-text="log.user ? log.user.isim : 'Sistem'"></span>
-                        </p>
-                    </div>
-                </template>
-            </div>
-
-            <div class="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-end">
-                <button @click="showLogModal = false" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition-colors">
-                    Kapat
-                </button>
-            </div>
-        </div>
     </div>
 </div>
 @endsection
