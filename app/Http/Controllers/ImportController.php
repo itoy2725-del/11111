@@ -7,7 +7,7 @@ use App\Services\ImportService;
 use App\Models\Import;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class ImportController extends Controller
 {
@@ -28,27 +28,30 @@ class ImportController extends Controller
     {
         $file = $request->file('csv_file');
         
-        $path = $file->storeAs('imports', 'import_' . time() . '.' . $file->getClientOriginalExtension());
-        $fullPath = storage_path('app/private/' . $path);
+        // Vercel serverless /tmp writable storage compatibility
+        $tmpDir = is_dir('/tmp') ? '/tmp' : storage_path('app');
+        $originalName = $file->getClientOriginalName();
+        $fileName = 'import_' . time() . '_' . Str::random(6) . '.csv';
+        $fullPath = $tmpDir . '/' . $fileName;
 
-        if (!file_exists($fullPath)) {
-            $fullPath = storage_path('app/' . $path);
-        }
+        @copy($file->getRealPath(), $fullPath);
         
         $rows = $this->importService->parseCSV($fullPath);
         
         if (empty($rows)) {
+            @unlink($fullPath);
             return back()->with('error', 'CSV dosyası boş veya okunamadı.');
         }
 
         $validation = $this->importService->validateHeaders(array_keys($rows[0]));
         if (!$validation['valid']) {
-            Storage::delete($path);
+            @unlink($fullPath);
             return back()->with('error', 'Eksik başlıklar: ' . implode(', ', $validation['missing']));
         }
 
         $analysis = $this->importService->checkDuplicates($rows);
 
+        $request->session()->put('import_original_name', $originalName);
         $request->session()->put('import_file_path', $fullPath);
         $request->session()->put('import_rows', $rows);
         $request->session()->put('import_analysis', $analysis);
@@ -89,13 +92,14 @@ class ImportController extends Controller
             return redirect()->route('import.index')->with('error', 'İçe aktarma verisi bulunamadı.');
         }
 
-        $import = $this->importService->processImport($rows, $request->duplicate_action, Auth::id());
+        $originalName = $request->session()->get('import_original_name', 'import_' . date('Y-m-d_H-i-s') . '.csv');
+        $import = $this->importService->processImport($rows, $request->duplicate_action, Auth::id(), $originalName);
 
-        $request->session()->forget(['import_rows', 'import_analysis']);
+        $request->session()->forget(['import_rows', 'import_analysis', 'import_original_name']);
         
         $path = $request->session()->get('import_file_path');
         if ($path && file_exists($path)) {
-            unlink($path);
+            @unlink($path);
             $request->session()->forget('import_file_path');
         }
 

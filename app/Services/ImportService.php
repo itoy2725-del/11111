@@ -107,7 +107,7 @@ class ImportService
         ];
     }
 
-    public function processImport(array $rows, string $duplicateAction, int $userId): Import
+    public function processImport(array $rows, string $duplicateAction, int $userId, string $fileName = null): Import
     {
         return DB::transaction(function () use ($rows, $duplicateAction, $userId) {
             $basarili = 0;
@@ -202,7 +202,7 @@ class ImportService
             }
             
             $import = Import::create([
-                'dosya_adi' => 'import_' . date('Y-m-d_H-i-s') . '.csv',
+                'dosya_adi' => $fileName ?: ('import_' . date('Y-m-d_H-i-s') . '.csv'),
                 'toplam_kayit' => count($rows),
                 'basarili' => $basarili,
                 'mukerrer' => $mukerrer,
