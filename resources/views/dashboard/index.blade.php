@@ -7,57 +7,60 @@
     @if(auth()->user()->isAdmin())
         <!-- Admin Dashboard Stats -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-center space-x-4 hover:shadow-md transition-shadow">
-                <div class="p-3 bg-indigo-100 rounded-lg">
-                    <svg class="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+            <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 flex items-center space-x-4 hover:shadow-md transition-all">
+                <div class="p-3.5 bg-indigo-50 dark:bg-indigo-950/60 rounded-2xl">
+                    <svg class="w-7 h-7 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
                 </div>
                 <div>
-                    <p class="text-sm font-medium text-gray-500">Toplam Lead</p>
-                    <p class="text-2xl font-bold text-gray-900">{{ number_format($stats['total_leads']) }}</p>
+                    <p class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Toplam Lead</p>
+                    <p class="text-3xl font-black text-slate-900 dark:text-slate-100 mt-0.5">{{ number_format($stats['total_leads']) }}</p>
                 </div>
             </div>
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-center space-x-4 hover:shadow-md transition-shadow">
-                <div class="p-3 bg-blue-100 rounded-lg">
-                    <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+
+            <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 flex items-center space-x-4 hover:shadow-md transition-all">
+                <div class="p-3.5 bg-blue-50 dark:bg-blue-950/60 rounded-2xl">
+                    <svg class="w-7 h-7 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                 </div>
                 <div>
-                    <p class="text-sm font-medium text-gray-500">Bugünkü Leadler</p>
-                    <p class="text-2xl font-bold text-gray-900">{{ number_format($stats['today_leads']) }}</p>
+                    <p class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Bugünkü Leadler</p>
+                    <p class="text-3xl font-black text-slate-900 dark:text-slate-100 mt-0.5">{{ number_format($stats['today_leads']) }}</p>
                 </div>
             </div>
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-center space-x-4 hover:shadow-md transition-shadow">
-                <div class="p-3 bg-yellow-100 rounded-lg">
-                    <svg class="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+
+            <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 flex items-center space-x-4 hover:shadow-md transition-all">
+                <div class="p-3.5 bg-amber-50 dark:bg-amber-950/60 rounded-2xl">
+                    <svg class="w-7 h-7 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
                 </div>
                 <div>
-                    <p class="text-sm font-medium text-gray-500">Bekleyen Görevler</p>
-                    <p class="text-2xl font-bold text-gray-900">{{ number_format($stats['pending_tasks']) }}</p>
+                    <p class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Bekleyen Görevler</p>
+                    <p class="text-3xl font-black text-slate-900 dark:text-slate-100 mt-0.5">{{ number_format($stats['pending_tasks']) }}</p>
                 </div>
             </div>
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-center space-x-4 hover:shadow-md transition-shadow">
-                <div class="p-3 bg-green-100 rounded-lg">
-                    <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+
+            <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 flex items-center space-x-4 hover:shadow-md transition-all">
+                <div class="p-3.5 bg-emerald-50 dark:bg-emerald-950/60 rounded-2xl">
+                    <svg class="w-7 h-7 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 </div>
                 <div>
-                    <p class="text-sm font-medium text-gray-500">Aktif Operatörler</p>
-                    <p class="text-2xl font-bold text-gray-900">{{ $stats['active_operators'] }}</p>
+                    <p class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Aktif Operatörler</p>
+                    <p class="text-3xl font-black text-slate-900 dark:text-slate-100 mt-0.5">{{ $stats['active_operators'] }}</p>
                 </div>
             </div>
         </div>
 
         <!-- Status Distribution -->
         @if($stats['status_distribution']->count() > 0)
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h3 class="font-semibold text-gray-800 mb-4">Durum Dağılımı</h3>
+        <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6">
+            <h3 class="font-bold text-slate-800 dark:text-slate-100 text-sm mb-4">Lead Durum Dağılımı</h3>
             <div class="space-y-3">
                 @php $maxCount = $stats['status_distribution']->max('count') ?: 1; @endphp
                 @foreach($stats['status_distribution'] as $status)
                 <div class="flex items-center space-x-3">
-                    <span class="w-32 text-sm text-gray-600 truncate">{{ $status->isim }}</span>
-                    <div class="flex-1 bg-gray-100 rounded-full h-6 relative overflow-hidden">
+                    <span class="w-36 text-xs font-semibold text-slate-600 dark:text-slate-300 truncate">{{ $status->isim }}</span>
+                    <div class="flex-1 bg-slate-100 dark:bg-slate-800 rounded-full h-5 relative overflow-hidden">
                         <div class="h-full rounded-full transition-all duration-500 flex items-center justify-end pr-2"
-                             style="width: {{ ($status->count / $maxCount) * 100 }}%; background-color: {{ $status->renk }};">
-                            <span class="text-xs font-bold text-white drop-shadow">{{ $status->count }}</span>
+                             style="width: {{ max(10, ($status->count / $maxCount) * 100) }}%; background-color: {{ $status->renk }};">
+                            <span class="text-[10px] font-extrabold text-white drop-shadow">{{ $status->count }}</span>
                         </div>
                     </div>
                 </div>
@@ -68,13 +71,13 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <!-- Operator Performance -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <div class="px-6 py-4 border-b border-gray-100">
-                    <h3 class="font-semibold text-gray-800">Operatör Performansı</h3>
+            <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950">
+                    <h3 class="font-bold text-slate-800 dark:text-slate-100 text-sm">Operatör Performansı</h3>
                 </div>
                 <div class="overflow-x-auto">
-                    <table class="w-full text-sm text-left">
-                        <thead class="text-xs text-gray-500 uppercase bg-gray-50">
+                    <table class="w-full text-xs text-left text-slate-600 dark:text-slate-300">
+                        <thead class="text-[11px] text-slate-500 dark:text-slate-400 uppercase bg-slate-100 dark:bg-slate-900 font-bold border-b border-slate-200 dark:border-slate-800">
                             <tr>
                                 <th class="px-6 py-3">İsim</th>
                                 <th class="px-6 py-3 text-center">Toplam</th>
@@ -82,16 +85,16 @@
                                 <th class="px-6 py-3 text-center">Bekleyen</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
                             @forelse($stats['operator_performance'] as $op)
-                            <tr class="border-b hover:bg-gray-50 transition-colors">
-                                <td class="px-6 py-4 font-medium text-gray-900">{{ $op['isim'] }}</td>
-                                <td class="px-6 py-4 text-center">{{ $op['total_leads'] }}</td>
-                                <td class="px-6 py-4 text-center text-green-600 font-semibold">{{ $op['completed'] }}</td>
-                                <td class="px-6 py-4 text-center text-yellow-600 font-semibold">{{ $op['pending'] }}</td>
+                            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                                <td class="px-6 py-4 font-bold text-slate-900 dark:text-slate-100">{{ $op['isim'] }}</td>
+                                <td class="px-6 py-4 text-center font-mono font-bold">{{ $op['total_leads'] }}</td>
+                                <td class="px-6 py-4 text-center text-emerald-600 font-extrabold">{{ $op['completed'] }}</td>
+                                <td class="px-6 py-4 text-center text-amber-600 font-extrabold">{{ $op['pending'] }}</td>
                             </tr>
                             @empty
-                            <tr><td colspan="4" class="px-6 py-4 text-center text-gray-500">Henüz operatör bulunmuyor.</td></tr>
+                            <tr><td colspan="4" class="px-6 py-4 text-center text-slate-400">Henüz operatör bulunmuyor.</td></tr>
                             @endforelse
                         </tbody>
                     </table>
@@ -99,26 +102,26 @@
             </div>
 
             <!-- Campaign Performance -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <div class="px-6 py-4 border-b border-gray-100">
-                    <h3 class="font-semibold text-gray-800">Kampanya Performansı</h3>
+            <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950">
+                    <h3 class="font-bold text-slate-800 dark:text-slate-100 text-sm">Kampanya Performansı</h3>
                 </div>
                 <div class="overflow-x-auto">
-                    <table class="w-full text-sm text-left">
-                        <thead class="text-xs text-gray-500 uppercase bg-gray-50">
+                    <table class="w-full text-xs text-left text-slate-600 dark:text-slate-300">
+                        <thead class="text-[11px] text-slate-500 dark:text-slate-400 uppercase bg-slate-100 dark:bg-slate-900 font-bold border-b border-slate-200 dark:border-slate-800">
                             <tr>
                                 <th class="px-6 py-3">Kampanya</th>
                                 <th class="px-6 py-3 text-center">Lead Sayısı</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
                             @forelse($stats['campaign_stats'] as $camp)
-                            <tr class="border-b hover:bg-gray-50 transition-colors">
-                                <td class="px-6 py-4 font-medium text-gray-900">{{ $camp->campaign_name }}</td>
-                                <td class="px-6 py-4 text-center">{{ $camp->count }}</td>
+                            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                                <td class="px-6 py-4 font-bold text-slate-900 dark:text-slate-100">{{ $camp->campaign_name }}</td>
+                                <td class="px-6 py-4 text-center font-mono font-extrabold text-indigo-600 dark:text-indigo-400">{{ $camp->count }}</td>
                             </tr>
                             @empty
-                            <tr><td colspan="2" class="px-6 py-4 text-center text-gray-500">Henüz kampanya verisi yok.</td></tr>
+                            <tr><td colspan="2" class="px-6 py-4 text-center text-slate-400">Henüz kampanya verisi yok.</td></tr>
                             @endforelse
                         </tbody>
                     </table>
@@ -127,14 +130,14 @@
         </div>
 
         <!-- Recent Leads -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
-                <h3 class="font-semibold text-gray-800">Son Eklenen Leadler</h3>
-                <a href="{{ route('leads.index') }}" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium">Tümünü Gör →</a>
+        <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 flex justify-between items-center">
+                <h3 class="font-bold text-slate-800 dark:text-slate-100 text-sm">Son Eklenen Leadler</h3>
+                <a href="{{ route('leads.index') }}" class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-bold">Tümünü Gör →</a>
             </div>
             <div class="overflow-x-auto">
-                <table class="w-full text-sm text-left">
-                    <thead class="text-xs text-gray-500 uppercase bg-gray-50">
+                <table class="w-full text-xs text-left text-slate-600 dark:text-slate-300">
+                    <thead class="text-[11px] text-slate-500 dark:text-slate-400 uppercase bg-slate-100 dark:bg-slate-900 font-bold border-b border-slate-200 dark:border-slate-800">
                         <tr>
                             <th class="px-6 py-3">ID</th>
                             <th class="px-6 py-3">Telefon</th>
@@ -144,24 +147,24 @@
                             <th class="px-6 py-3">Tarih</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
                         @forelse($stats['recent_leads'] as $lead)
-                        <tr class="border-b hover:bg-gray-50 transition-colors cursor-pointer" onclick="window.location='{{ route('leads.show', $lead->id) }}'">
-                            <td class="px-6 py-4 font-medium text-gray-900">#{{ $lead->id }}</td>
-                            <td class="px-6 py-4">{{ $lead->telefon }}</td>
-                            <td class="px-6 py-4">{{ $lead->email }}</td>
+                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer" onclick="window.location='{{ route('leads.show', $lead->id) }}'">
+                            <td class="px-6 py-4 font-mono font-bold text-slate-900 dark:text-slate-100">#{{ $lead->id }}</td>
+                            <td class="px-6 py-4 font-mono font-bold text-slate-900 dark:text-slate-100">{{ $lead->telefon }}</td>
+                            <td class="px-6 py-4">{{ $lead->email ?: '-' }}</td>
                             <td class="px-6 py-4">
                                 @if($lead->status)
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium text-white" style="background-color: {{ $lead->status->renk }}">
+                                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold border" style="background-color: {{ $lead->status->renk }}20; color: {{ $lead->status->renk }}; border-color: {{ $lead->status->renk }}">
                                     {{ $lead->status->isim }}
                                 </span>
                                 @endif
                             </td>
-                            <td class="px-6 py-4">{{ $lead->operator->isim ?? '-' }}</td>
-                            <td class="px-6 py-4 text-gray-500">{{ $lead->created_at->format('d.m.Y H:i') }}</td>
+                            <td class="px-6 py-4 font-medium">{{ $lead->operator->isim ?? 'Atanmamış' }}</td>
+                            <td class="px-6 py-4 text-slate-400 font-mono">{{ $lead->created_at ? $lead->created_at->format('d.m.Y H:i') : '-' }}</td>
                         </tr>
                         @empty
-                        <tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">Henüz lead bulunmuyor.</td></tr>
+                        <tr><td colspan="6" class="px-6 py-4 text-center text-slate-400">Henüz lead bulunmuyor.</td></tr>
                         @endforelse
                     </tbody>
                 </table>
@@ -170,103 +173,45 @@
         
     @else
         <!-- Operator Dashboard -->
-        <div class="bg-gradient-to-r from-indigo-600 to-indigo-800 rounded-xl shadow-lg p-6 text-white relative overflow-hidden">
+        <div class="bg-gradient-to-r from-indigo-600 to-indigo-800 rounded-2xl shadow-lg p-6 text-white relative overflow-hidden">
             <div class="relative z-10">
-                <h2 class="text-2xl font-bold mb-2">Hoş geldin, {{ auth()->user()->isim }}!</h2>
-                <p class="text-indigo-100">
-                    Bugün ilgilenmen gereken <span class="font-bold text-white">{{ $todayTasks->count() }}</span> görev ve
-                    toplam <span class="font-bold text-white">{{ $myLeadsCount }}</span> atanmış lead bulunuyor.
+                <h2 class="text-2xl font-black mb-2">Hoş geldin, {{ auth()->user()->isim }}!</h2>
+                <p class="text-indigo-100 text-sm">
+                    Bugün ilgilenmen gereken <span class="font-black text-white underline">{{ $todayTasks->count() }}</span> görev ve
+                    toplam <span class="font-black text-white underline">{{ $myLeadsCount }}</span> atanmış lead bulunuyor.
                 </p>
             </div>
-            <svg class="absolute right-0 bottom-0 opacity-10 h-32 w-32 transform translate-x-8 translate-y-8" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
         </div>
 
         <!-- Operator Stat Cards -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-center space-x-4">
-                <div class="p-3 bg-indigo-100 rounded-lg">
-                    <svg class="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 flex items-center space-x-4">
+                <div class="p-3.5 bg-indigo-50 dark:bg-indigo-950/60 rounded-2xl">
+                    <svg class="w-7 h-7 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                 </div>
                 <div>
-                    <p class="text-sm font-medium text-gray-500">Toplam Leadlerim</p>
-                    <p class="text-2xl font-bold text-gray-900">{{ $myLeadsCount }}</p>
-                </div>
-            </div>
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-center space-x-4">
-                <div class="p-3 bg-blue-100 rounded-lg">
-                    <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                </div>
-                <div>
-                    <p class="text-sm font-medium text-gray-500">Bugün Gelen</p>
-                    <p class="text-2xl font-bold text-gray-900">{{ $myTodayLeadsCount }}</p>
-                </div>
-            </div>
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-center space-x-4">
-                <div class="p-3 bg-yellow-100 rounded-lg">
-                    <svg class="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-                </div>
-                <div>
-                    <p class="text-sm font-medium text-gray-500">Bekleyen Görevler</p>
-                    <p class="text-2xl font-bold text-gray-900">{{ $myPendingTasks }}</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <!-- Today's Tasks -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
-                    <h3 class="font-semibold text-gray-800">Bugünkü Görevlerim</h3>
-                    <a href="{{ route('tasks.index') }}" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium">Tümünü Gör →</a>
-                </div>
-                <div class="p-4 space-y-3">
-                    @forelse($todayTasks as $task)
-                    <div class="p-4 bg-gray-50 border border-gray-100 rounded-lg flex justify-between items-center hover:bg-gray-100 transition-colors">
-                        <div>
-                            <p class="font-medium text-gray-900">{{ $task->baslik }}</p>
-                            <p class="text-sm text-gray-500">{{ $task->lead ? ($task->lead->ad_soyad ?? $task->lead->telefon) : 'Genel görev' }}</p>
-                        </div>
-                        <div class="text-right">
-                            <span class="text-xs font-semibold px-2 py-1 rounded-full {{ $task->tarih->isPast() ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700' }}">
-                                {{ $task->tarih->format('H:i') }}
-                            </span>
-                        </div>
-                    </div>
-                    @empty
-                    <div class="text-center py-6 text-gray-500">
-                        <svg class="w-12 h-12 mx-auto text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        Bugün için planlanmış göreviniz yok.
-                    </div>
-                    @endforelse
+                    <p class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Toplam Leadlerim</p>
+                    <p class="text-3xl font-black text-slate-900 dark:text-slate-100 mt-0.5">{{ $myLeadsCount }}</p>
                 </div>
             </div>
 
-            <!-- Recent Leads -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
-                    <h3 class="font-semibold text-gray-800">Son Atanan Leadler</h3>
-                    <a href="{{ route('leads.index') }}" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium">Leadlerime Git →</a>
+            <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 flex items-center space-x-4">
+                <div class="p-3.5 bg-blue-50 dark:bg-blue-950/60 rounded-2xl">
+                    <svg class="w-7 h-7 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                 </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-sm text-left">
-                        <tbody>
-                            @forelse($recentLeads as $lead)
-                            <tr class="border-b hover:bg-gray-50 transition-colors cursor-pointer" onclick="window.location='{{ route('leads.show', $lead->id) }}'">
-                                <td class="px-6 py-4 font-medium text-gray-900">{{ $lead->ad_soyad ?? $lead->telefon }}</td>
-                                <td class="px-6 py-4">{{ $lead->telefon }}</td>
-                                <td class="px-6 py-4">
-                                    @if($lead->status)
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium text-white" style="background-color: {{ $lead->status->renk }}">
-                                        {{ $lead->status->isim }}
-                                    </span>
-                                    @endif
-                                </td>
-                            </tr>
-                            @empty
-                            <tr><td colspan="3" class="px-6 py-6 text-center text-gray-500">Son atanan lead bulunmuyor.</td></tr>
-                            @endforelse
-                        </tbody>
-                    </table>
+                <div>
+                    <p class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Bugün Gelen</p>
+                    <p class="text-3xl font-black text-slate-900 dark:text-slate-100 mt-0.5">{{ $myTodayLeadsCount }}</p>
+                </div>
+            </div>
+
+            <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 flex items-center space-x-4">
+                <div class="p-3.5 bg-amber-50 dark:bg-amber-950/60 rounded-2xl">
+                    <svg class="w-7 h-7 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                </div>
+                <div>
+                    <p class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Bekleyen Görevler</p>
+                    <p class="text-3xl font-black text-slate-900 dark:text-slate-100 mt-0.5">{{ $myPendingTasks }}</p>
                 </div>
             </div>
         </div>

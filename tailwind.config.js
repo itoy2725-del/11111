@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'class',
   content: [
     "./resources/**/*.blade.php",
     "./resources/**/*.js",
@@ -24,7 +25,7 @@ export default {
       },
       fontFamily: {
         sans: [
-          'ui-sans-serif', 'system-ui', 'sans-serif', '"Apple Color Emoji"', '"Segoe UI Emoji"', '"Segoe UI Symbol"', '"Noto Color Emoji"'
+          'Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'
         ],
       },
     },
