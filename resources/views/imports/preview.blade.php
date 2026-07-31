@@ -78,20 +78,21 @@
         </form>
     </div>
 
-    <!-- Clean Dynamic Preview Table (Stripped Technical IDs) -->
+    <!-- Full Lead Data Preview Table -->
     <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200 bg-slate-50 flex justify-between items-center">
-            <h3 class="font-bold text-gray-800">Lead Detay Verileri Önizleme (Temizlenmiş Kolonlar)</h3>
-            <span class="text-xs bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full font-semibold">Teknik ID'ler Kaldırıldı</span>
+            <h3 class="font-bold text-gray-800">Lead Detay Verileri Önizleme (Tüm Kolonlar)</h3>
+            <span class="text-xs bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full font-semibold">Gereksiz ID'ler Temizlendi</span>
         </div>
         <div class="overflow-x-auto">
             <table class="w-full text-xs text-left text-gray-600">
                 <thead class="text-[11px] text-gray-500 uppercase bg-slate-100 font-bold border-b border-gray-200">
                     <tr>
-                        <th class="px-4 py-3 whitespace-nowrap">Tarih / Platform</th>
+                        <th class="px-4 py-3 whitespace-nowrap">Ad Soyad</th>
                         <th class="px-4 py-3 whitespace-nowrap">Telefon</th>
                         <th class="px-4 py-3 whitespace-nowrap">E-posta</th>
-                        <th class="px-4 py-3 whitespace-nowrap">Reklam / Kampanya</th>
+                        <th class="px-4 py-3 whitespace-nowrap">Tarih / Platform</th>
+                        <th class="px-4 py-3 whitespace-nowrap">Kampanya / Reklam</th>
                         <th class="px-4 py-3 whitespace-nowrap">Dolandırıcılık Türü</th>
                         <th class="px-4 py-3 whitespace-nowrap">Kayıp Miktarı</th>
                         <th class="px-4 py-3 whitespace-nowrap">Cüzdan Türü</th>
@@ -103,6 +104,7 @@
                 <tbody class="divide-y divide-gray-100">
                     @forelse($previewRows as $row)
                         @php
+                            $adSoyad = $row['ad_soyad'] ?? $row['full_name'] ?? $row['name'] ?? 'Meta Lead';
                             $phone = $row['normalized_phone'] ?? '-';
                             $email = $row['normalized_email'] ?? '-';
                             $adName = trim(str_replace('"', '', $row['ad_name'] ?? ''));
@@ -117,7 +119,7 @@
                                 }
                             }
                             
-                            // Extract form answers
+                            // Form Answers
                             $fraud = $row['durumunuz_en_iyisi_hangisi_tanımlıyor'] ?? $row['durumunuzu_en_iyi_hangisi_tanımlıyor'] ?? '-';
                             $loss = $row['ne_kadar_kripto_kaybedildi'] ?? '-';
                             $wallet = $row['fonlarınızı_göndermek_için_kullandığınız_cüzdanı_seçin'] ?? '-';
@@ -126,19 +128,22 @@
                             $crypto = $row['tüm_cüzdanlarınızda_şu_andan_ne_kadar_kriptonuz_bulunuyor'] ?? '-';
                         @endphp
                         <tr class="hover:bg-slate-50 transition-colors">
-                            <td class="px-4 py-3 whitespace-nowrap">
-                                <span class="font-bold text-gray-900 block">{{ $createdTime }}</span>
-                                <span class="inline-block px-1.5 py-0.5 text-[10px] font-bold rounded bg-indigo-50 text-indigo-700 border border-indigo-100 mt-0.5">{{ $platform }}</span>
+                            <td class="px-4 py-3 whitespace-nowrap font-bold text-gray-900">
+                                {{ $adSoyad }}
                             </td>
                             <td class="px-4 py-3 whitespace-nowrap font-mono font-bold text-indigo-600">
                                 {{ $phone }}
                             </td>
-                            <td class="px-4 py-3 whitespace-nowrap">
+                            <td class="px-4 py-3 whitespace-nowrap text-gray-700">
                                 {{ $email }}
                             </td>
+                            <td class="px-4 py-3 whitespace-nowrap">
+                                <span class="font-semibold text-gray-800 block">{{ $createdTime }}</span>
+                                <span class="inline-block px-1.5 py-0.5 text-[10px] font-bold rounded bg-indigo-50 text-indigo-700 border border-indigo-100 mt-0.5">{{ $platform }}</span>
+                            </td>
                             <td class="px-4 py-3">
-                                <span class="font-semibold text-gray-800 block whitespace-nowrap">{{ $adName ?: 'Meta Lead Ad' }}</span>
-                                <span class="text-gray-500 text-[11px] block whitespace-nowrap">{{ $campaignName ?: 'Genel Kampanya' }}</span>
+                                <span class="font-semibold text-gray-800 block whitespace-nowrap">{{ $adName ?: 'New Leads Ad' }}</span>
+                                <span class="text-gray-500 text-[11px] block whitespace-nowrap">{{ $campaignName ?: 'New Leads Campaign' }}</span>
                             </td>
                             <td class="px-4 py-3 whitespace-nowrap">
                                 <span class="px-2 py-0.5 rounded text-[11px] font-medium bg-red-50 text-red-700 border border-red-100">
@@ -167,7 +172,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="10" class="px-6 py-4 text-center text-gray-500">Önizleme satırı bulunmuyor.</td>
+                            <td colspan="11" class="px-6 py-4 text-center text-gray-500">Önizleme satırı bulunmuyor.</td>
                         </tr>
                     @endforelse
                 </tbody>
