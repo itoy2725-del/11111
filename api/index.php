@@ -1,21 +1,19 @@
 <?php
 
 /**
- * Vercel Serverless Entrypoint & Direct Exception Interceptor
+ * Vercel Serverless Entrypoint
  */
 
 ini_set('display_errors', '1');
 ini_set('display_startup_errors', '1');
 error_reporting(E_ALL);
 
-// Ensure ephemeral /tmp storage exists
 $tmpStorage = '/tmp/storage';
 $directories = [
     $tmpStorage . '/framework/views',
     $tmpStorage . '/framework/cache/data',
     $tmpStorage . '/framework/sessions',
     $tmpStorage . '/logs',
-    '/tmp/bootstrap/cache',
 ];
 
 foreach ($directories as $dir) {
@@ -47,7 +45,6 @@ try {
 
     $request = \Illuminate\Http\Request::capture();
     
-    // Process request directly to catch primary exception before Handler masks it with view error
     $response = $app->handleRequest($request);
     $response->send();
 
