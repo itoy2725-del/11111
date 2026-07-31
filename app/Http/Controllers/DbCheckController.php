@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Hash;
 
 class DbCheckController extends Controller
 {
@@ -66,5 +67,36 @@ class DbCheckController extends Controller
         }
 
         return view('db-check', compact('status'));
+    }
+
+    public function resetAdmin()
+    {
+        try {
+            DB::table('users')->updateOrInsert(
+                ['email' => 'admin@sistem.local'],
+                [
+                    'isim' => 'Sistem Yöneticisi',
+                    'password' => Hash::make('SiberCRM2024!'),
+                    'rol' => 'super_admin',
+                    'aktif' => 1,
+                    'updated_at' => now(),
+                ]
+            );
+
+            DB::table('users')->updateOrInsert(
+                ['email' => 'ali@sistem.local'],
+                [
+                    'isim' => 'Ali Yılmaz',
+                    'password' => Hash::make('Operator2024!'),
+                    'rol' => 'operator',
+                    'aktif' => 1,
+                    'updated_at' => now(),
+                ]
+            );
+
+            return redirect()->route('check-db')->with('success', 'Admin (admin@sistem.local / SiberCRM2024!) hesabı başarıyla güncellendi!');
+        } catch (\Exception $e) {
+            return redirect()->route('check-db')->with('error', 'Şifre güncellenirken hata oluştu: ' . $e->getMessage());
+        }
     }
 }

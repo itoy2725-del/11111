@@ -10,15 +10,31 @@
     <div class="max-w-4xl mx-auto space-y-6">
         
         <!-- Header -->
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 flex justify-between items-center">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
                 <h1 class="text-2xl font-bold text-gray-900">Veritabanı Bağlantı & Durum Kontrolü</h1>
                 <p class="text-sm text-gray-500 mt-1">CRM Bağlantı Analizörü</p>
             </div>
-            <a href="{{ route('login') }}" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium text-sm transition-colors">
-                Giriş Ekranına Git →
-            </a>
+            <div class="flex items-center space-x-3">
+                <a href="{{ route('check-db.reset-admin') }}" onclick="return confirm('Admin ve Operatör şifreleri veritabanında güncellenecek. Onaylıyor musunuz?')" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium text-sm transition-colors shadow-sm">
+                    🔑 Admin Şifresini Sıfırla / Oluştur
+                </a>
+                <a href="{{ route('login') }}" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium text-sm transition-colors">
+                    Giriş Ekranına Git →
+                </a>
+            </div>
         </div>
+
+        @if(session('success'))
+            <div class="bg-emerald-50 border border-emerald-200 text-emerald-800 px-6 py-4 rounded-xl font-medium">
+                {{ session('success') }}
+            </div>
+        @endif
+        @if(session('error'))
+            <div class="bg-red-50 border border-red-200 text-red-800 px-6 py-4 rounded-xl font-medium">
+                {{ session('error') }}
+            </div>
+        @endif
 
         <!-- Connection Status Card -->
         <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">

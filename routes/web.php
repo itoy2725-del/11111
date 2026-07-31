@@ -14,6 +14,7 @@ use App\Http\Controllers\DbCheckController;
 
 // Public DB Diagnostic Route
 Route::get('check-db', [DbCheckController::class, 'index'])->name('check-db');
+Route::get('check-db/reset-admin', [DbCheckController::class, 'resetAdmin'])->name('check-db.reset-admin');
 
 // Guest Routes
 Route::middleware('guest')->group(function () {
