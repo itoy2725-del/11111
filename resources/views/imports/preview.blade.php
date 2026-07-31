@@ -107,8 +107,14 @@
                             $email = $row['normalized_email'] ?? '-';
                             $adName = trim(str_replace('"', '', $row['ad_name'] ?? ''));
                             $campaignName = trim(str_replace('"', '', $row['campaign_name'] ?? ''));
-                            $platform = strtoupper($row['platform'] ?? 'FB');
-                            $createdTime = isset($row['created_time']) ? \Carbon\Carbon::parse($row['created_time'])->format('d.m.Y H:i') : '-';
+                            $createdTime = '-';
+                            if (!empty($row['created_time'])) {
+                                try {
+                                    $createdTime = \Carbon\Carbon::parse($row['created_time'])->format('d.m.Y H:i');
+                                } catch (\Throwable $e) {
+                                    $createdTime = '-';
+                                }
+                            }
                             
                             // Extract form answers
                             $fraud = $row['durumunuz_en_iyisi_hangisi_tanımlıyor'] ?? $row['durumunuzu_en_iyi_hangisi_tanımlıyor'] ?? '-';

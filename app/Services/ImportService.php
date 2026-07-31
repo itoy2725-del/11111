@@ -227,10 +227,19 @@ class ImportService
                 }
 
                 try {
+                    $createdTime = null;
+                    if (!empty($row['created_time'])) {
+                        try {
+                            $createdTime = Carbon::parse($row['created_time']);
+                        } catch (\Throwable $e) {
+                            $createdTime = null;
+                        }
+                    }
+
                     $data = [
                         'ad_soyad' => $row['ad_soyad'] ?? 'Meta Lead',
                         'meta_lead_id' => $row['id'] ?? null,
-                        'created_time' => isset($row['created_time']) ? Carbon::parse($row['created_time']) : null,
+                        'created_time' => $createdTime,
                         'ad_id' => $row['ad_id'] ?? null,
                         'ad_name' => $row['ad_name'] ?? null,
                         'adset_id' => $row['adset_id'] ?? null,
